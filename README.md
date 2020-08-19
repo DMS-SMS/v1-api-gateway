@@ -1,10 +1,10 @@
 # **DMS-SMS/V1**
 
-## **Index**
-### [**1. DMS-SMS란?**](#DMS-/SMS란?)
+## **INDEX**
+### [**1. DMS-SMS란?**](#DMS-SMS란?)
 ### [**2. 서비스 기능**](#서비스-기능)
 ### [**3. 서비스 분해**](#서비스-분해)
-### [**4. API Gateway의 기능**](#API-Gateway-기능)
+### [**4. API Gateway 기능**](#API-Gateway-기능)
 ### [**5. 배포 방식**](#배포-방식)
 
 <br>
@@ -73,7 +73,7 @@
 
 <br>
 
-## **API Gateway의 기능**
+## **API Gateway 기능**
 1. ### **요청 유효성 검사**
     - 서버에 전송한 payload에 꼭 필요한 **데이터가 다 존재**하는지, **데이터 제약조건**은 다 만족했는지 확인 *(x -> 400 Bad Request)* 
 
@@ -99,3 +99,10 @@
 6. ### **관측성 패턴 적용**
     - **ELK Stack**(Elasticsearch + Logstash + Kibana + Filebeat)로 구성된 로그 시스템에 **로그 작성**
     - 외부 API에 대한 **지연 시간** 및 **응답 결과**를 작성하기 위한 **Distributed Trace**(jaeger 사용)를 시작하기 위해 Span 생성 및 Metadata로 다음 서비스에 Span-Context 전달
+
+<br>
+
+## **배포 방식**
+- 각각의 서비스들은 **AWS EKS 클러스터**의 **노드**마다 하나씩 **Public Subnet**및 **Private Subnet**에 알맞게 배치되어 실행중입니다.
+
+- 배포 서비스 업데이트 방식은 새로운 버전의 서비스 실행 파일이 담긴 Docker Image를 **Docker Hub에 올린** 후 AWS EKS 클러스터에 연결된 **kubectl 명령어**를 이용해서 **deployment 객체의 이미지 버전을 변경**합니다.
