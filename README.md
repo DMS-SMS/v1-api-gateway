@@ -1,5 +1,5 @@
 # **DMS-SMS/V1**
-
+> ### API Gateway 이외의 서비스들에 대한 Repository는 [**서비스 분해**](#서비스-분해) 부분에서 확인하실 수 있습니다!
 ## **INDEX**
 ### [**1. DMS-SMS란?**](#DMS-SMS란?)
 ### [**2. 서비스 기능**](#서비스-기능)
@@ -41,32 +41,32 @@
 
 > 참고로, **protocol-buffer** 관련 파일들을 모와둔 [**레포지토리**](https://github.com/DMS-SMS/v1-protocol-buffer)에서도 참고하실 수 있습니다.  
 
-1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) 
+1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) *(개발 전)*
     - **이름** -> DMS.SMS.v1.api.gateway
     - **설명** -> 적절한 서비스에 **사용자 요청 라우팅** 서비스
     - **개발** -> 박진홍
 
-2. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth)
+2. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth) *(개발 중)*
     - **이름** -> DMS.SMS.v1.service.auth
     - **설명** -> 학생, 선생님, 부모님 **계정 및 정보** 관리 서비스
     - **개발** -> 박진홍
 
-3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing)
+3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing) *(개발 전)*
     - **이름** -> DMS.SMS.v1.service.outing
     - **기능** -> **외출증** 관리 서비스
     - **개발** -> 손민기
 
-4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) 
+4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 전)*
     - **이름** -> DMS.SMS.v1.service.club
     - **기능** -> **동아리(정보, 모집)** 관리 서비스
     - **개발** -> 박진홍
 
-5. ### [**Announement Service**](https://github.com/DMS-SMS/v1-service-announcement) 
+5. ### [**Announement Service**](https://github.com/DMS-SMS/v1-service-announcement) *(개발 전)*
     - **이름** -> DMS.SMS.v1.service.announcement
     - **기능** -> **공지(학교, 동아리)** 관리 서비스
     - **개발** -> 손민기
 
-6. ### [**Schedule Service**](https://github.com/DMS-SMS/v1-service-schedule) 
+6. ### [**Schedule Service**](https://github.com/DMS-SMS/v1-service-schedule) *(개발 전)*
     - **이름** -> DMS.SMS.v1.service.schedule
     - **기능** -> **학사 일정(시간표, 캘린더)** 관리 서비스
     - **개발** -> 손민기
