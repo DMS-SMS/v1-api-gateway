@@ -51,7 +51,7 @@
     - **설명** -> 학생, 선생님, 부모님 **계정 및 정보** 관리 서비스
     - **개발** -> 박진홍
 
-3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing) *(개발 전)*
+3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing) *(개발 중)*
     - **이름** -> DMS.SMS.v1.service.outing
     - **기능** -> **외출증** 관리 서비스
     - **개발** -> 손민기
