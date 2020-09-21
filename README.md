@@ -46,7 +46,7 @@
     - **설명** -> 적절한 서비스에 **사용자 요청 라우팅** 서비스
     - **개발** -> 박진홍
 
-2. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth) *(개발 중)*
+2. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.service.auth
     - **설명** -> 학생, 선생님, 부모님 **계정 및 정보** 관리 서비스
     - **개발** -> 박진홍
@@ -56,7 +56,7 @@
     - **기능** -> **외출증** 관리 서비스
     - **개발** -> 손민기
 
-4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 전)*
+4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 중)*
     - **이름** -> DMS.SMS.v1.service.club
     - **기능** -> **동아리(정보, 모집)** 관리 서비스
     - **개발** -> 박진홍
