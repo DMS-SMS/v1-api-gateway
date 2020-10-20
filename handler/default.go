@@ -3,6 +3,7 @@ package handler
 import (
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	"gateway/tool/consul"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
 	"github.com/opentracing/opentracing-go"
@@ -23,13 +24,13 @@ type _default struct {
 		clubproto.ClubStudentService
 		clubproto.ClubLeaderService
 	}
-	logger     *logrus.Logger
-	tracer     opentracing.Tracer
-	validate   *validator.Validate
-	breakers   map[string]*breaker.Breaker
-	BreakerCfg BreakerConfig
-	mutex      sync.Mutex
-	// consul agent 인터페이스 추가 예정
+	consulAgent consul.Agent
+	logger      *logrus.Logger
+	tracer      opentracing.Tracer
+	breakers    map[string]*breaker.Breaker
+	validate    *validator.Validate
+	mutex       sync.Mutex
+	BreakerCfg  BreakerConfig
 }
 
 type BreakerConfig struct {
