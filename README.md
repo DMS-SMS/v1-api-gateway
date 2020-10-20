@@ -41,7 +41,7 @@
 
 > 참고로, **protocol-buffer** 관련 파일들을 모와둔 [**레포지토리**](https://github.com/DMS-SMS/v1-protocol-buffer)에서도 참고하실 수 있습니다.  
 
-1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) *(개발 전)*
+1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) *(개발 중)*
     - **이름** -> DMS.SMS.v1.api.gateway
     - **설명** -> 적절한 서비스에 **사용자 요청 라우팅** 서비스
     - **개발** -> 박진홍
@@ -56,7 +56,7 @@
     - **기능** -> **외출증** 관리 서비스
     - **개발** -> 손민기
 
-4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 중)*
+4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.service.club
     - **기능** -> **동아리(정보, 모집)** 관리 서비스
     - **개발** -> 박진홍
