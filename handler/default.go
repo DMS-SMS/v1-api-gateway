@@ -38,3 +38,21 @@ type BreakerConfig struct {
 	SuccessThreshold int
 	Timeout          time.Duration
 }
+
+func Default(setters ...FieldSetter) (h *_default) {
+	h = new(_default)
+
+	for _, setter := range setters {
+		setter(h)
+	}
+
+	h.BreakerCfg = BreakerConfig{
+		ErrorThreshold:   3,
+		SuccessThreshold: 3,
+		Timeout:          time.Minute,
+	}
+
+	return
+}
+
+type FieldSetter func(*_default)
