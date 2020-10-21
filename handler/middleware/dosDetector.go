@@ -39,18 +39,30 @@ func (d *dosDetector) DosDetect(c *gin.Context) {
 
 	// check ip is blocked
 	if d.rejected[cip] {
-		c.String(http.StatusTooManyRequests, "your IP is currently request blocked")
+		c.AbortWithStatusJSON(http.StatusTooManyRequests, struct {
+			Status  int    `json:"status"`
+			Message string `json:"message"`
+		}{
+			Status: http.StatusTooManyRequests,
+			Message: "your IP is currently request blocked",
+		})
 		return
 	}
 
 	// set rejected true if total request per second is over than 10
 	if *d.limitTable[cip] >= 10 {
 		d.rejected[cip] = true
-		c.String(http.StatusTooManyRequests, "unusual request was detected. Please try again after a minute")
 		time.AfterFunc(time.Minute, func() {
 			d.mutex.Lock()
 			d.rejected[cip] = false
 			d.mutex.Unlock()
+		})
+		c.AbortWithStatusJSON(http.StatusTooManyRequests, struct {
+			Status  int    `json:"status"`
+			Message string `json:"message"`
+		}{
+			Status:  http.StatusTooManyRequests,
+			Message: "unusual request was detected. Please try again after a minute",
 		})
 		return
 	}
