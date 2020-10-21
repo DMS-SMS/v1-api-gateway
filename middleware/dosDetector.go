@@ -14,15 +14,15 @@ type dosDetector struct {
 	mutex      sync.Mutex
 }
 
-func DosDetector() *dosDetector {
-	return &dosDetector{
+func DosDetector() gin.HandlerFunc {
+	return (&dosDetector{
 		limitTable: make(map[string]*uint32),
 		rejected:   make(map[string]bool),
 		mutex:      sync.Mutex{},
-	}
+	}).detectDos
 }
 
-func (d *dosDetector) DosDetect(c *gin.Context) {
+func (d *dosDetector) detectDos (c *gin.Context) {
 	cip := c.ClientIP()
 
 	d.mutex.Lock()
