@@ -1,6 +1,12 @@
 package middleware
 
-import "sync"
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"sync"
+	"sync/atomic"
+	"time"
+)
 
 type dosDetector struct {
 	limitTable map[string]*uint32
@@ -14,4 +20,45 @@ func DosDetector() *dosDetector {
 		rejected:   make(map[string]bool),
 		mutex:      sync.Mutex{},
 	}
+}
+
+func (d *dosDetector) DosDetect(c *gin.Context) {
+	cip := c.ClientIP()
+
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// set initial value if not exists
+	if _, ok := d.limitTable[cip]; !ok {
+		var init uint32 = 0
+		d.limitTable[cip] = &init
+	}
+	if _, ok := d.rejected[cip]; !ok {
+		d.rejected[cip] = false
+	}
+
+	// check ip is blocked
+	if d.rejected[cip] {
+		c.String(http.StatusTooManyRequests, "your IP is currently request blocked")
+		return
+	}
+
+	// set rejected true if total request per second is over than 10
+	if *d.limitTable[cip] >= 10 {
+		d.rejected[cip] = true
+		c.String(http.StatusTooManyRequests, "unusual request was detected. Please try again after a minute")
+		time.AfterFunc(time.Minute, func() {
+			d.mutex.Lock()
+			d.rejected[cip] = false
+			d.mutex.Unlock()
+		})
+		return
+	}
+
+	atomic.AddUint32(d.limitTable[cip], 1)
+	time.AfterFunc(time.Second, func() {
+		d.mutex.Lock()
+		*d.limitTable[cip] -= 1
+		d.mutex.Unlock()
+	})
 }
