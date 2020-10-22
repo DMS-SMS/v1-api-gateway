@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"gateway/tool/jwt"
 	//code "gateway/utils/code/golang"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -27,6 +29,23 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 			"code":    0,
 			"message": "unable to get request log entry from middleware",
 		}).Warn()
+		return
+	}
+
+	var uuidClaims jwt.UUIDClaims
+	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
+		uuidClaims = claims
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  http.StatusUnauthorized,
+			"code":    _code,
+			"message": msg,
+		})
+		entry.WithFields(logrus.Fields{
+			"status":  http.StatusUnauthorized,
+			"code":    _code,
+			"message": msg,
+		}).Info()
 		return
 	}
 
