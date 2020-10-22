@@ -61,3 +61,32 @@ func (_ *_default) checkIfAuthenticated(c *gin.Context) (ok bool, claims jwtutil
 		return
 	}
 }
+
+func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok bool, code int, msg string) {
+	switch c.ContentType() {
+	case "application/json":
+		break
+	default:
+		ok = false
+		code = respcode.UnsupportedContentType
+		msg = fmt.Sprintf("%s is an unsupported content type", c.ContentType())
+		return
+	}
+
+	if err := c.ShouldBindJSON(bindReq); err != nil {
+		ok = false
+		code = respcode.FailToBindRequestToStruct
+		msg = fmt.Sprintf("failed to bind request json into golang struct, err: %v", err)
+		return
+	}
+
+	if err := h.validate.Struct(bindReq); err != nil {
+		ok = false
+		code = respcode.IntegrityInvalidRequest
+		msg = fmt.Sprintf("request is not valid for integrity constraints, err: %v", err)
+		return
+	}
+
+	ok = true
+	return
+}
