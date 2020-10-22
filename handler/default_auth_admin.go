@@ -17,6 +17,10 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	// path, method, client_ip, X-Request-Id, header -> 미들웨어에서 처리
 	// request, response, status, code, message -> 핸들러에서 처치
 
+	reqID := c.GetHeader("X-Request-Id")
+	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	defer topSpan.Finish()
+
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
 	if !ok {
