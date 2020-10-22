@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"fmt"
+	"encoding/json"
+	"gateway/entity"
 	"gateway/tool/jwt"
 	//code "gateway/utils/code/golang"
 	"github.com/gin-gonic/gin"
@@ -45,6 +46,24 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 			"status":  http.StatusUnauthorized,
 			"code":    _code,
 			"message": msg,
+		}).Info()
+		return
+	}
+
+	var req entity.CreateNewStudentRequest
+	if ok, _code, msg := h.checkIfValidRequest(c, &req); ok {
+	} else {
+		reqBytes, _ := json.Marshal(req)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"code":    _code,
+			"message": msg,
+		})
+		entry.WithFields(logrus.Fields{
+			"status":  http.StatusBadRequest,
+			"code":    _code,
+			"message": msg,
+			"request": string(reqBytes),
 		}).Info()
 		return
 	}
