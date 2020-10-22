@@ -19,7 +19,7 @@ func (_ *_default) checkIfAuthenticated(c *gin.Context) (ok bool, claims jwtutil
 
 	if len(strings.Split(c.GetHeader("Authorization"), " ")) != 2 {
 		ok = false
-		code = respcode.InvalidAuthorizationFormat
+		code = respcode.InvalidFormatOfAuthorization
 		msg = "invalid data format of Authorization"
 		return
 	}
@@ -56,7 +56,7 @@ func (_ *_default) checkIfAuthenticated(c *gin.Context) (ok bool, claims jwtutil
 		return
 	default:
 		ok = false
-		code = respcode.InvalidAuthorizationType
+		code = respcode.UnsupportedAuthorization
 		msg = fmt.Sprintf("%s is an unacceptable authentication method", authType)
 		return
 	}
