@@ -1,13 +1,14 @@
 package handler
 
 import (
+	//code "gateway/utils/code/golang"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func (h *_default) CreateNewStudent(c *gin.Context) {
-	reqID := c.GetHeader("X-Request-Id")
+	//reqID := c.GetHeader("X-Request-Id")
 
 	// 로그에 필요한 정보
 	// path, method, client_ip, X-Request-Id, header -> 미들웨어에서 처리
@@ -18,8 +19,14 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
+			"code":    0,
 			"message": "unable to get request log entry from middleware",
 		})
+		entry.WithFields(logrus.Fields{
+			"status":  http.StatusInternalServerError,
+			"code":    0,
+			"message": "unable to get request log entry from middleware",
+		}).Warn()
 		return
 	}
 
