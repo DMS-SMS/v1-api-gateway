@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"gateway/entity"
 	"gateway/tool/jwt"
+	topic "gateway/utils/topic/golang"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	//code "gateway/utils/code/golang"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -49,6 +52,14 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 		return
 	}
+
+	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	if err == nil {
+		consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode))
+	}
+	consulSpan.LogFields(log.Error(err))
+	consulSpan.Finish()
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  http.StatusCreated,
