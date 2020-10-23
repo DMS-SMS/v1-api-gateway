@@ -76,3 +76,11 @@ func (d *_default) GetNextServiceNode(service string) (*registry.Node, error) {
 
 	return selectedNode, nil
 }
+
+func (d *_default) FailTTLHealth(checkID, note string) (err error) {
+	return d.client.Agent().FailTTL(checkID, note)
+}
+
+func (d *_default) PassTTLHealth(checkID, note string) (err error) {
+	return d.client.Agent().PassTTL(checkID, note)
+}
