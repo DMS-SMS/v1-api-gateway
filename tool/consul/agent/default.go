@@ -12,3 +12,29 @@ type _default struct {
 	next     selector.Next
 	nodes    []*registry.Node
 }
+
+func Default(setters ...FieldSetter) *_default {
+	return newDefault(setters...)
+}
+
+func newDefault(setters ...FieldSetter) (h *_default) {
+	h = new(_default)
+	for _, setter := range setters {
+		setter(h)
+	}
+	return
+}
+
+type FieldSetter func(*_default)
+
+func Client(c *api.Client) FieldSetter {
+	return func(d *_default) {
+		d.client = c
+	}
+}
+
+func Strategy(s selector.Strategy) FieldSetter {
+	return func(d *_default) {
+		d.Strategy = s
+	}
+}
