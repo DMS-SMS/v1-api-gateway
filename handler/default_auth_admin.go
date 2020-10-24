@@ -13,12 +13,14 @@ import (
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/gin-gonic/gin"
 	"github.com/micro/go-micro/v2/client"
+	"github.com/micro/go-micro/v2/errors"
 	"github.com/micro/go-micro/v2/metadata"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	"net/http"
+	"time"
 )
 
 func (h *_default) CreateNewStudent(c *gin.Context) {
@@ -107,4 +109,43 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		authSrvSpan.Finish()
 		return
 	})
+
+	if err == breaker.ErrBreakerOpen {
+		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		var status, _code int
+		var msg string
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for CreateNewStudent service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("CreateNewStudent returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+	default:
+		status, _code := http.StatusInternalServerError, 0
+		msg := fmt.Sprintf("CreateNewStudent returns unexpected type of error, err: %s", rpcErr.Error())
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+	}
 }
