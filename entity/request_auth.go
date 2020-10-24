@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 )
 
-// request entity of POST /v1/clubs
+// request entity of POST /v1/students
 type CreateNewStudentRequest struct {
 	StudentID     string `form:"student_id" validate:"required,min=4,max=16"`
 	StudentPW     string `form:"student_pw" validate:"required,min=4,max=16"`
@@ -34,5 +34,26 @@ func (from CreateNewStudentRequest) GenerateGRPCRequest() (to *authproto.CreateN
 	defer func() { _ = file.Close() }()
 	_, _ = file.Read(to.Image)
 
+	return
+}
+
+// request entity of POST /v1/teachers
+type CreateNewTeacherRequest struct {
+	TeacherID     string `form:"teacher_id" validate:"required,min=4,max=16"`
+	TeacherPW     string `form:"teacher_pw" validate:"required,min=4,max=16"`
+	Grade         int    `form:"grade" validate:"required,int_range=0~3"`
+	Group         int    `form:"group" validate:"required,int_range=0~4"`
+	Name          string `form:"name" validate:"required,korean,min=2,max=4"`
+	PhoneNumber   string `form:"phone_number" validate:"required,phone_number,len=11"`
+}
+
+func (from CreateNewTeacherRequest) GenerateGRPCRequest() (to *authproto.CreateNewTeacherRequest) {
+	to = new(authproto.CreateNewTeacherRequest)
+	to.TeacherID = from.TeacherID
+	to.TeacherPW = from.TeacherPW
+	to.Grade = uint32(from.Grade)
+	to.Group = uint32(from.Group)
+	to.Name = from.Name
+	to.PhoneNumber = from.PhoneNumber
 	return
 }
