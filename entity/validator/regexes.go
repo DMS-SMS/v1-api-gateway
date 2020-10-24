@@ -12,6 +12,7 @@ const (
 	announcementUUIDRegexString = "^announcement-\\d{12}"
 	recruitmentUUIDRegexString = "^recruitment-\\d{12}"
 	timeRegexString = "\\d{4}-\\d{2}-\\d{2}"
+	phoneNumberRegexString = "^010\\d{8}"
 )
 
 var (
@@ -24,4 +25,5 @@ var (
 	announcementUUIDRegex = regexp.MustCompile(announcementUUIDRegexString)
 	recruitmentUUIDRegex = regexp.MustCompile(recruitmentUUIDRegexString)
 	timeRegex = regexp.MustCompile(timeRegexString)
+	phoneNumberRegex = regexp.MustCompile(phoneNumberRegexString)
 )
