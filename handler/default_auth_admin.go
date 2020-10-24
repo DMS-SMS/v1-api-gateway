@@ -148,4 +148,27 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	}
+
+	switch rpcResp.Status {
+	case http.StatusCreated:
+		status, _code := http.StatusCreated, 0
+		msg := "succeed to create new club"
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "student_uuid": rpcResp.CreatedStudentUUID})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "student_uuid": rpcResp.CreatedStudentUUID}).Info()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code),
+			log.String("message", msg), log.String("student_uuid", rpcResp.CreatedStudentUUID))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	}
+
+	return
 }
