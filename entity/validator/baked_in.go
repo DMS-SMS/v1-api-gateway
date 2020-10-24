@@ -65,3 +65,7 @@ func isKoreanString(fl validator.FieldLevel) bool {
 	}
 	return true
 }
+
+func isPhoneNumber(fl validator.FieldLevel) bool {
+	return phoneNumberRegex.MatchString(fl.Field().String())
+}
