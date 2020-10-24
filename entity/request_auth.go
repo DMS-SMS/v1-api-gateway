@@ -57,3 +57,20 @@ func (from CreateNewTeacherRequest) GenerateGRPCRequest() (to *authproto.CreateN
 	to.PhoneNumber = from.PhoneNumber
 	return
 }
+
+// request entity of POST /v1/parents
+type CreateNewParentRequest struct {
+	ParentID    string `form:"parent_id" validate:"required,min=4,max=16"`
+	ParentPW    string `form:"parent_pw" validate:"required,min=4,max=16"`
+	Name        string `form:"name" validate:"required,korean,min=2,max=4"`
+	PhoneNumber string `form:"phone_number" validate:"required,phone_number,len=11"`
+}
+
+func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNewParentRequest) {
+	to = new(authproto.CreateNewParentRequest)
+	to.ParentID = from.ParentID
+	to.ParentPW = from.ParentPW
+	to.Name = from.Name
+	to.PhoneNumber = from.PhoneNumber
+	return
+}
