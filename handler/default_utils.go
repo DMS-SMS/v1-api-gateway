@@ -64,7 +64,7 @@ func (_ *_default) checkIfAuthenticated(c *gin.Context) (ok bool, claims jwtutil
 
 func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok bool, code int, msg string) {
 	switch c.ContentType() {
-	case "application/json":
+	case "multipart/form-data":
 		break
 	default:
 		ok = false
@@ -73,7 +73,7 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 		return
 	}
 
-	if err := c.ShouldBindJSON(bindReq); err != nil {
+	if err := c.ShouldBind(bindReq); err != nil {
 		ok = false
 		code = respcode.FailToBindRequestToStruct
 		msg = fmt.Sprintf("failed to bind request json into golang struct, err: %v", err)
