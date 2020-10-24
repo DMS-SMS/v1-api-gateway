@@ -39,12 +39,12 @@ func (from CreateNewStudentRequest) GenerateGRPCRequest() (to *authproto.CreateN
 
 // request entity of POST /v1/teachers
 type CreateNewTeacherRequest struct {
-	TeacherID     string `form:"teacher_id" validate:"required,min=4,max=16"`
-	TeacherPW     string `form:"teacher_pw" validate:"required,min=4,max=16"`
-	Grade         int    `form:"grade" validate:"required,int_range=0~3"`
-	Group         int    `form:"group" validate:"required,int_range=0~4"`
-	Name          string `form:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber   string `form:"phone_number" validate:"required,phone_number,len=11"`
+	TeacherID   string `form:"teacher_id" validate:"required,min=4,max=16"`
+	TeacherPW   string `form:"teacher_pw" validate:"required,min=4,max=16"`
+	Grade       int    `form:"grade" validate:"int_range=0~3"`
+	Group       int    `form:"group" validate:"int_range=0~4"`
+	Name        string `form:"name" validate:"required,korean,min=2,max=4"`
+	PhoneNumber string `form:"phone_number" validate:"required,phone_number,len=11"`
 }
 
 func (from CreateNewTeacherRequest) GenerateGRPCRequest() (to *authproto.CreateNewTeacherRequest) {
