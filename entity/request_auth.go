@@ -28,5 +28,11 @@ func (from CreateNewStudentRequest) GenerateGRPCRequest() (to *authproto.CreateN
 	to.StudentNumber = uint32(from.StudentNumber)
 	to.Name = from.Name
 	to.PhoneNumber = from.PhoneNumber
+
+	to.Image = make([]byte, from.Profile.Size)
+	file, _ := from.Profile.Open()
+	defer func() { _ = file.Close() }()
+	_, _ = file.Read(to.Image)
+
 	return
 }
