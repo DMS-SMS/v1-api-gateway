@@ -26,7 +26,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Warn()
 		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.Finish()
+		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
 		return
 	}
 
@@ -38,7 +38,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
 		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.Finish()
+		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -50,7 +50,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.Finish()
+		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.Finish()
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
@@ -77,7 +77,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.Finish()
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
