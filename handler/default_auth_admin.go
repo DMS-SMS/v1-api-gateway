@@ -24,7 +24,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	if !ok {
 		msg := "unable to get request log entry from middleware"
 		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Warn()
+		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
 		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
 		return
@@ -67,7 +67,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
@@ -75,16 +75,9 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
 		status, _code := http.StatusInternalServerError, 0
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
-
-
-	c.JSON(http.StatusCreated, gin.H{
-		"status":  http.StatusCreated,
-		"message": "succeed to create new club",
-	})
-	return
 }
