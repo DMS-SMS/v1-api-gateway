@@ -2,8 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"gateway/entity"
+	agenterrors "gateway/tool/consul/agent/errors"
 	"gateway/tool/jwt"
+	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
@@ -56,6 +59,28 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
 	consulSpan.LogFields(log.Error(err))
 	consulSpan.Finish()
+
+	switch err {
+	case nil:
+		break
+	case agenterrors.AvailableNodeNotExist:
+		msg := "available auth service node is not exist in consul"
+		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.Finish()
+		return
+	default:
+		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
+		status, _code := http.StatusInternalServerError, 0
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Fatal()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.Finish()
+		return
+	}
+
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  http.StatusCreated,
