@@ -5,6 +5,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 func isValidateUUID(fl validator.FieldLevel) bool {
@@ -49,4 +51,17 @@ func isWithinIntRange(fl validator.FieldLevel) bool {
 
 	field := int(fl.Field().Int())
 	return field >= start && field <= end
+}
+
+func isKoreanString(fl validator.FieldLevel) bool {
+	b := []byte(fl.Field().String())
+	var idx int
+
+	for {
+		r, size := utf8.DecodeRune(b[idx:])
+		if size == 0 { break }
+		if !unicode.Is(unicode.Hangul, r) { return false }
+		idx += size
+	}
+	return true
 }
