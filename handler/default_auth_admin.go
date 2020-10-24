@@ -1,17 +1,23 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"gateway/entity"
+	authproto "gateway/proto/golang/auth"
 	agenterrors "gateway/tool/consul/agent/errors"
 	"gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
+	"github.com/eapache/go-resiliency/breaker"
 	"github.com/gin-gonic/gin"
+	"github.com/micro/go-micro/v2/client"
+	"github.com/micro/go-micro/v2/metadata"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sirupsen/logrus"
+	"github.com/uber/jaeger-client-go"
 	"net/http"
 )
 
@@ -44,7 +50,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 
 	// logic handling BadRequest
 	var receivedReq entity.CreateNewStudentRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
+	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && receivedReq.Profile != nil {
 	} else {
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
@@ -80,4 +86,25 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+
+	h.mutex.Lock()
+	if _, ok := h.breakers[selectedNode.Id]; !ok {
+		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
+	}
+	h.mutex.Unlock()
+
+	var rpcResp *authproto.CreateNewStudentResponse
+	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+		authSrvSpan := h.tracer.StartSpan("CreateNewStudent", opentracing.ChildOf(topSpan.Context()))
+		ctxForReq := context.Background()
+		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+		rpcReq := receivedReq.GenerateGRPCRequest()
+		rpcReq.UUID = uuidClaims.UUID
+		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		rpcResp, rpcErr = h.authService.CreateNewStudent(ctxForReq, rpcReq, callOpts...)
+		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(err))
+		authSrvSpan.Finish()
+		return
+	})
 }
