@@ -2,6 +2,7 @@ package entity
 
 import (
 	authproto "gateway/proto/golang/auth"
+	"mime/multipart"
 )
 
 // request entity of POST /v1/clubs
@@ -11,9 +12,10 @@ type CreateNewStudentRequest struct {
 	ParentUUID    string `form:"parent_uuid" validate:"required,uuid=parent,len=19"`
 	Grade         int    `form:"grade" validate:"required,int_range=1~3"`
 	Group         int    `form:"group" validate:"required,int_range=1~4"`
-	StudentNumber int    `form:"number" validate:"required,int_range=1~21"`
+	StudentNumber int    `form:"student_number" validate:"required,int_range=1~21"`
 	Name          string `form:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber   string `form:"phone_number" validate:"phone_number,len=11"`
+	PhoneNumber   string `form:"phone_number" validate:"required,phone_number,len=11"`
+	Profile       *multipart.FileHeader `form:"profile" validate:"required"`
 }
 
 func (from CreateNewStudentRequest) GenerateGRPCRequest() (to *authproto.CreateNewStudentRequest) {
