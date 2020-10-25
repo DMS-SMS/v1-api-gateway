@@ -51,3 +51,20 @@ func (from GetClubsSortByUpdateTimeRequest) GenerateGRPCRequest() (to *clubproto
 	to.Name = from.Name
 	return
 }
+
+// request entity of GET /v1/recruitments/paging
+type GetRecruitmentsSortByCreateTimeRequest struct {
+	Start int    `form:"start"`
+	Count int    `form:"count"`
+	Field string `form:"field"`
+	Name  string `form:"name"`
+}
+
+func (from GetRecruitmentsSortByCreateTimeRequest) GenerateGRPCRequest() (to *clubproto.GetRecruitmentsSortByCreateTimeRequest) {
+	to = new(clubproto.GetRecruitmentsSortByCreateTimeRequest)
+	to.Start = uint32(from.Start)
+	to.Count = uint32(from.Count)
+	to.Field = from.Field
+	to.Name = from.Name
+	return
+}
