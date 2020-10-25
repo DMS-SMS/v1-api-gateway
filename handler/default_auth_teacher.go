@@ -150,9 +150,10 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "access_token": jwtToken,
-			"teacher_uuid": rpcResp.LoggedInTeacherUUID, "request": string(reqBytes)}).Info()
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
 			log.String("access_token", jwtToken), log.String("teacher_uuid", rpcResp.LoggedInTeacherUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
@@ -305,8 +306,10 @@ func (h *_default) ChangeTeacherPW(c *gin.Context) {
 	case http.StatusCreated:
 		status, _code := http.StatusCreated, 0
 		msg := fmt.Sprintf("succeed to change auth password of %s", uuidClaims.UUID)
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		sendResp := gin.H{"status": status, "code": _code, "message": msg}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
