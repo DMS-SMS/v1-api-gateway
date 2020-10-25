@@ -6,6 +6,7 @@ import (
 	"gateway/tool/consul"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
+	"github.com/micro/go-micro/v2/client"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"sync"
@@ -24,13 +25,14 @@ type _default struct {
 		clubproto.ClubStudentService
 		clubproto.ClubLeaderService
 	}
-	consulAgent consul.Agent
-	logger      *logrus.Logger
-	tracer      opentracing.Tracer
-	validate    *validator.Validate
-	breakers    map[string]*breaker.Breaker
-	mutex       sync.Mutex
-	BreakerCfg  BreakerConfig
+	consulAgent     consul.Agent
+	logger          *logrus.Logger
+	tracer          opentracing.Tracer
+	validate        *validator.Validate
+	breakers        map[string]*breaker.Breaker
+	mutex           sync.Mutex
+	BreakerCfg      BreakerConfig
+	DefaultCallOpts []client.CallOption
 }
 
 type BreakerConfig struct {
@@ -46,10 +48,11 @@ func Default(setters ...FieldSetter) (h *_default) {
 	}
 
 	h.BreakerCfg = BreakerConfig{
-		ErrorThreshold:   3,
-		SuccessThreshold: 3,
+		ErrorThreshold:   5,
+		SuccessThreshold: 5,
 		Timeout:          time.Minute,
 	}
+	h.DefaultCallOpts = []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 3)}
 	h.mutex = sync.Mutex{}
 	h.breakers = map[string]*breaker.Breaker{}
 
