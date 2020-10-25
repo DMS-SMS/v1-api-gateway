@@ -100,3 +100,16 @@ func (from LoginStudentAuthRequest) GenerateGRPCRequest() (to *authproto.LoginSt
 	to.StudentPW = from.StudentPW
 	return
 }
+
+// request entity of POST v1/login/student
+type LoginTeacherAuthRequest struct {
+	TeacherID string `form:"teacher_id" validate:"required"`
+	TeacherPW string `form:"teacher_pw" validate:"required"`
+}
+
+func (from LoginTeacherAuthRequest) GenerateGRPCRequest() (to *authproto.LoginTeacherAuthRequest) {
+	to = new(authproto.LoginTeacherAuthRequest)
+	to.TeacherID = from.TeacherID
+	to.TeacherPW = from.TeacherPW
+	return
+}
