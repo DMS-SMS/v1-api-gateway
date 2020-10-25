@@ -763,7 +763,19 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get student informs list with uuid list"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "informs": rpcResp.StudentInforms}
+		students := make([]map[string]interface{}, len(rpcResp.StudentInforms))
+		for index, studentInform := range rpcResp.StudentInforms {
+			students[index] = map[string]interface{}{
+				"student_uuid":   studentInform.StudentUUID,
+				"grade":          studentInform.Grade,
+				"group":          studentInform.Group,
+				"student_number": studentInform.StudentNumber,
+				"name":           studentInform.Name,
+				"phone_number":   studentInform.PhoneNumber,
+				"profile_uri":    studentInform.ImageURI,
+			}
+		}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "students": students}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
