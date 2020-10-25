@@ -26,7 +26,7 @@ import (
 
 func (h *_default) LoginStudentAuth(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -174,7 +174,7 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 
 func (h *_default) ChangeStudentPW(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -329,7 +329,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 
 func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
