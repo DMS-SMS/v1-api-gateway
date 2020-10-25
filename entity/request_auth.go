@@ -161,6 +161,23 @@ func (from ChangeTeacherPWRequest) GenerateGRPCRequest() (to *authproto.ChangeTe
 	return
 }
 
+// request entity for GET /v1/student-uuids
+type GetTeacherUUIDsWithInformRequest struct {
+	Grade         int    `form:"grade" validate:"int_range=0~3"`
+	Group         int    `form:"group" validate:"int_range=0~4"`
+	Name          string `form:"name" validate:"korean"`
+	PhoneNumber   string `form:"phone_number" validate:"phone_number"`
+}
+
+func (from GetTeacherUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto.GetTeacherUUIDsWithInformRequest) {
+	to = new(authproto.GetTeacherUUIDsWithInformRequest)
+	to.Grade = uint32(from.Grade)
+	to.Group = uint32(from.Group)
+	to.Name = from.Name
+	to.PhoneNumber = from.PhoneNumber
+	return
+}
+
 // request entity of POST v1/login/parent
 type LoginParentAuthRequest struct {
 	ParentID string `form:"parent_id" validate:"required"`
