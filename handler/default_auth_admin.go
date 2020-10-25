@@ -140,6 +140,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("CreateNewStudent returns unexpected type of error, err: %s", rpcErr.Error())
@@ -147,6 +148,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	}
 
 	switch rpcResp.Status {
@@ -290,6 +292,7 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("CreateNewTeacher returns unexpected type of error, err: %s", rpcErr.Error())
@@ -297,6 +300,7 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	}
 
 	switch rpcResp.Status {
@@ -440,6 +444,7 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("CreateNewParent returns unexpected type of error, err: %s", rpcErr.Error())
@@ -447,6 +452,7 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
 	}
 
 	switch rpcResp.Status {
