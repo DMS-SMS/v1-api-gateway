@@ -3,6 +3,7 @@ package entity
 import (
 	authproto "gateway/proto/golang/auth"
 	"mime/multipart"
+	"strings"
 )
 
 // request entity of POST /v1/students
@@ -132,6 +133,17 @@ func (from GetStudentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authprot
 	to.Name = from.Name
 	to.PhoneNumber = from.PhoneNumber
 	to.ImageURI = from.ProfileURI
+	return
+}
+
+// request entity for GET /v1/students
+type GetStudentInformsWithUUIDsRequest struct {
+	UUIDs string `form:"uuids" validate:"required"`
+}
+
+func (from GetStudentInformsWithUUIDsRequest) GenerateGRPCRequest() (to *authproto.GetStudentInformsWithUUIDsRequest) {
+	to = new(authproto.GetStudentInformsWithUUIDsRequest)
+	to.StudentUUIDs = strings.Split(from.UUIDs, "|")
 	return
 }
 
