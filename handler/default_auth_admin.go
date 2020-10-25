@@ -156,9 +156,11 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusCreated:
 		status, _code := http.StatusCreated, 0
-		msg := "succeed to create new club"
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "student_uuid": rpcResp.CreatedStudentUUID})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "student_uuid": rpcResp.CreatedStudentUUID, "request": string(reqBytes)}).Info()
+		msg := "succeed to create new student"
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "student_uuid": rpcResp.CreatedStudentUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code),
 			log.String("message", msg), log.String("student_uuid", rpcResp.CreatedStudentUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
@@ -309,10 +311,11 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusCreated:
 		status, _code := http.StatusCreated, 0
-		msg := "succeed to create new club"
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "teacher_uuid": rpcResp.CreatedTeacherUUID})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg,
-			"teacher_uuid": rpcResp.CreatedTeacherUUID, "request": string(reqBytes)}).Info()
+		msg := "succeed to create new teacher"
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "teacher_uuid": rpcResp.CreatedTeacherUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code),
 			log.String("message", msg), log.String("teacher_uuid", rpcResp.CreatedTeacherUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
@@ -463,10 +466,11 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusCreated:
 		status, _code := http.StatusCreated, 0
-		msg := "succeed to create new club"
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "parent_uuid": rpcResp.CreatedParentUUID})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg,
-			"parent_uuid": rpcResp.CreatedParentUUID, "request": string(reqBytes)}).Info()
+		msg := "succeed to create new parent"
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "parent_uuid": rpcResp.CreatedParentUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code),
 			log.String("message", msg), log.String("parent_uuid", rpcResp.CreatedParentUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
@@ -611,9 +615,10 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "admin_uuid": rpcResp.LoggedInAdminUUID})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "access_token": jwtToken,
-			"admin_uuid": rpcResp.LoggedInAdminUUID, "request": string(reqBytes)}).Info()
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "admin_uuid": rpcResp.LoggedInAdminUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
 			log.String("access_token", jwtToken), log.String("admin_uuid", rpcResp.LoggedInAdminUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
