@@ -74,3 +74,16 @@ func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNe
 	to.PhoneNumber = from.PhoneNumber
 	return
 }
+
+// request entity of POST v1/login/admin
+type LoginAdminAuthRequest struct {
+	AdminID    string `form:"admin_id" validate:"required"`
+	AdminPW    string `form:"admin_pw" validate:"required"`
+}
+
+func (from LoginAdminAuthRequest) GenerateGRPCRequest() (to *authproto.LoginAdminAuthRequest) {
+	to = new(authproto.LoginAdminAuthRequest)
+	to.AdminID = from.AdminID
+	to.AdminPW = from.AdminPW
+	return
+}
