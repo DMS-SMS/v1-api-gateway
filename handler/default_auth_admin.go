@@ -7,7 +7,7 @@ import (
 	"gateway/entity"
 	authproto "gateway/proto/golang/auth"
 	agenterrors "gateway/tool/consul/agent/errors"
-	"gateway/tool/jwt"
+	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
 	"github.com/eapache/go-resiliency/breaker"
@@ -39,7 +39,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	}
 
 	// logic handling Unauthorized
-	var uuidClaims jwt.UUIDClaims
+	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
 	} else {
@@ -191,7 +191,7 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 	}
 
 	// logic handling Unauthorized
-	var uuidClaims jwt.UUIDClaims
+	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
 	} else {
@@ -343,7 +343,7 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 	}
 
 	// logic handling Unauthorized
-	var uuidClaims jwt.UUIDClaims
+	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
 	} else {
