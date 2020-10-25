@@ -26,7 +26,7 @@ import (
 
 func (h *_default) LoginTeacherAuth(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -174,7 +174,7 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 
 func (h *_default) ChangeTeacherPW(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)

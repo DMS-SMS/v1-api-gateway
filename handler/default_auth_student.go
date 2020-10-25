@@ -26,7 +26,7 @@ import (
 
 func (h *_default) LoginStudentAuth(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -174,7 +174,7 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 
 func (h *_default) ChangeStudentPW(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -329,7 +329,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 
 func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -389,7 +389,7 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 
 	var rpcResp *authproto.GetStudentInformWithUUIDResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("ChangeStudentPW", opentracing.ChildOf(topSpan.Context()))
+		authSrvSpan := h.tracer.StartSpan("GetStudentInformWithUUID", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())

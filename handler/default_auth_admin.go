@@ -26,7 +26,7 @@ import (
 
 func (h *_default) CreateNewStudent(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -181,7 +181,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 
 func (h *_default) CreateNewTeacher(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -336,7 +336,7 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 
 func (h *_default) CreateNewParent(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
@@ -491,7 +491,7 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 
 func (h *_default) LoginAdminAuth(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(c.Request.URL.Path).SetTag("X-Request-Id", reqID)
+	topSpan := h.tracer.StartSpan(c.FullPath()).SetTag("X-Request-Id", reqID)
 
 	inAdvanceEntry, ok := c.Get("RequestLogEntry")
 	entry, ok := inAdvanceEntry.(*logrus.Entry)
