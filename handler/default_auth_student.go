@@ -607,7 +607,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
-		msg := fmt.Sprintf("succeed to get student inform, uuid: %s", uuidClaims.UUID)
+		msg := "succeed to get student uuid list with inform"
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "uuids": rpcResp.StudentUUIDs}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
