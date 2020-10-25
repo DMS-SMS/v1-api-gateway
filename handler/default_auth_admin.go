@@ -105,7 +105,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		rpcReq.UUID = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.authService.CreateNewStudent(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(err))
+		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()
 		return
 	})
@@ -257,7 +257,7 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 		rpcReq.UUID = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.authService.CreateNewTeacher(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(err))
+		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()
 		return
 	})
@@ -409,7 +409,7 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 		rpcReq.UUID = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.authService.CreateNewParent(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(err))
+		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()
 		return
 	})
