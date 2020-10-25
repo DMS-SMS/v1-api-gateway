@@ -101,7 +101,7 @@ func (from LoginStudentAuthRequest) GenerateGRPCRequest() (to *authproto.LoginSt
 	return
 }
 
-// request entity for PUT v1/students/{uuid}/password
+// request entity for PUT v1/students/{student_uuid}/password
 type ChangeStudentPWRequest struct {
 	CurrentPW   string `form:"current_pw" validate:"required"`
 	RevisionPW  string `form:"revision_pw" validate:"required,min=4,max=16"`
@@ -127,7 +127,7 @@ func (from LoginTeacherAuthRequest) GenerateGRPCRequest() (to *authproto.LoginTe
 	return
 }
 
-// request entity for PUT v1/students/{uuid}/password
+// request entity for PUT v1/teachers/{teacher_uuid}/password
 type ChangeTeacherPWRequest struct {
 	CurrentPW   string `form:"current_pw" validate:"required"`
 	RevisionPW  string `form:"revision_pw" validate:"required,min=4,max=16"`
@@ -150,5 +150,19 @@ func (from LoginParentAuthRequest) GenerateGRPCRequest() (to *authproto.LoginPar
 	to = new(authproto.LoginParentAuthRequest)
 	to.ParentID = from.ParentID
 	to.ParentPW = from.ParentPW
+	return
+}
+
+
+// request entity for PUT v1/parents/{parent_uuid}/password
+type ChangeParentPWRequest struct {
+	CurrentPW   string `form:"current_pw" validate:"required"`
+	RevisionPW  string `form:"revision_pw" validate:"required,min=4,max=16"`
+}
+
+func (from ChangeParentPWRequest) GenerateGRPCRequest() (to *authproto.ChangeParentPWRequest) {
+	to = new(authproto.ChangeParentPWRequest)
+	to.CurrentPW = from.CurrentPW
+	to.RevisionPW = from.RevisionPW
 	return
 }
