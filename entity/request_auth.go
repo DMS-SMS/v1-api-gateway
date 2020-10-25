@@ -127,6 +127,19 @@ func (from LoginTeacherAuthRequest) GenerateGRPCRequest() (to *authproto.LoginTe
 	return
 }
 
+// request entity for PUT v1/students/{uuid}/password
+type ChangeTeacherPWRequest struct {
+	CurrentPW   string `form:"current_pw" validate:"required"`
+	RevisionPW  string `form:"revision_pw" validate:"required,min=4,max=16"`
+}
+
+func (from ChangeTeacherPWRequest) GenerateGRPCRequest() (to *authproto.ChangeTeacherPWRequest) {
+	to = new(authproto.ChangeTeacherPWRequest)
+	to.CurrentPW = from.CurrentPW
+	to.RevisionPW = from.RevisionPW
+	return
+}
+
 // request entity of POST v1/login/parent
 type LoginParentAuthRequest struct {
 	ParentID string `form:"parent_id" validate:"required"`
