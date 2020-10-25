@@ -149,9 +149,10 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "access_token": jwtToken}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg), log.String("access_token", jwtToken))
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID}).Info()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
+			log.String("access_token", jwtToken), log.String("teacher_uuid", rpcResp.LoggedInTeacherUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
