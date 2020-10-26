@@ -69,7 +69,7 @@ func (from GetRecruitmentsSortByCreateTimeRequest) GenerateGRPCRequest() (to *cl
 	return
 }
 
-// request entity for GET /v1/students
+// request entity for GET /v1/clubs
 type GetClubInformsWithUUIDsRequest struct {
 	UUIDs string `form:"uuids" validate:"required"`
 }
@@ -77,5 +77,16 @@ type GetClubInformsWithUUIDsRequest struct {
 func (from GetClubInformsWithUUIDsRequest) GenerateGRPCRequest() (to *clubproto.GetClubInformsWithUUIDsRequest) {
 	to = new(clubproto.GetClubInformsWithUUIDsRequest)
 	to.ClubUUIDs = strings.Split(from.UUIDs, "|")
+	return
+}
+
+// request entity for GET /v1/recruitment-uuids
+type GetRecruitmentUUIDsWithClubUUIDsRequest struct {
+	ClubUUIDs string `form:"club_uuids" validate:"required"`
+}
+
+func (from GetRecruitmentUUIDsWithClubUUIDsRequest) GenerateGRPCRequest() (to *clubproto.GetRecruitmentUUIDsWithClubUUIDsRequest) {
+	to = new(clubproto.GetRecruitmentUUIDsWithClubUUIDsRequest)
+	to.ClubUUIDs = strings.Split(from.ClubUUIDs, "|")
 	return
 }
