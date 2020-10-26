@@ -91,7 +91,7 @@ func (from GetRecruitmentUUIDsWithClubUUIDsRequest) GenerateGRPCRequest() (to *c
 	return
 }
 
-// request entity for GET /v1/recruitment-uuids
+// request entity for GET /v1/clubs/uuid/:club_uuid/members
 type AddClubMemberRequest struct {
 	StudentUUID string `form:"student_uuid" validate:"required,uuid=student,len=20"`
 }
@@ -102,7 +102,7 @@ func (from AddClubMemberRequest) GenerateGRPCRequest() (to *clubproto.AddClubMem
 	return
 }
 
-// request entity for GET /v1/recruitment-uuids
+// request entity for PUT /v1/clubs/uuid/:club_uuid/leader
 type ChangeClubLeaderRequest struct {
 	NewLeaderUUID string `form:"new_leader_uuid" validate:"required,uuid=student,len=20"`
 }
@@ -113,7 +113,7 @@ func (from ChangeClubLeaderRequest) GenerateGRPCRequest() (to *clubproto.ChangeC
 	return
 }
 
-// request entity for GET /v1/recruitment-uuids
+// request entity for PATCH /v1/clubs/uuid/:club_uuid/
 type ModifyClubInformRequest struct {
 	ClubConcept  string `form:"club_concept" validate:"max=40"`
 	Introduction string `form:"introduction" validate:"max=150"`
@@ -165,7 +165,7 @@ func (from RegisterRecruitmentRequest) GenerateGRPCRequest() (to *clubproto.Regi
 	return
 }
 
-// request entity for POST /v1/clubs/uuid/:club_uuid/recruitments
+// request entity for PATCH /v1/recruitments/uuid/:recruitment_uuid
 type ModifyRecruitmentRequest struct {
 	RecruitConcept string `json:"recruit_concept" validate:"max=40"`
 	EndPeriod      string `json:"end_period" validate:"time,max=10"`
