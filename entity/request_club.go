@@ -164,3 +164,28 @@ func (from RegisterRecruitmentRequest) GenerateGRPCRequest() (to *clubproto.Regi
 	}
 	return
 }
+
+// request entity for POST /v1/clubs/uuid/:club_uuid/recruitments
+type ModifyRecruitmentRequest struct {
+	RecruitConcept string `json:"recruit_concept" validate:"max=40"`
+	EndPeriod      string `json:"end_period" validate:"time,max=10"`
+	Members        []struct {
+		Grade  int `json:"grade" validate:"required,int_range=1~3"`
+		Field  string `json:"field" validate:"required,max=20"`
+		Number int `json:"number" validate:"required,int_range=1~10"`
+	} `json:"members"`
+}
+
+func (from ModifyRecruitmentRequest) GenerateGRPCRequest() (to *clubproto.ModifyRecruitmentRequest) {
+	to = new(clubproto.ModifyRecruitmentRequest)
+	to.RecruitConcept = from.RecruitConcept
+	to.RecruitMembers = make([]*clubproto.RecruitMember, len(from.Members))
+	for index, member := range from.Members {
+		to.RecruitMembers[index] = &clubproto.RecruitMember{
+			Grade:  strconv.Itoa(member.Grade),
+			Field:  member.Field,
+			Number: strconv.Itoa(member.Number),
+		}
+	}
+	return
+}
