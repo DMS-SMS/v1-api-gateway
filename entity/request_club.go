@@ -112,3 +112,27 @@ func (from ChangeClubLeaderRequest) GenerateGRPCRequest() (to *clubproto.ChangeC
 	to.NewLeaderUUID = from.NewLeaderUUID
 	return
 }
+
+// request entity for GET /v1/recruitment-uuids
+type ModifyClubInformRequest struct {
+	ClubConcept  string `form:"club_concept" validate:"max=40"`
+	Introduction string `form:"introduction" validate:"max=150"`
+	Link         string `form:"link" validate:"max=100"`
+	Logo         *multipart.FileHeader `form:"logo"`
+}
+
+func (from ModifyClubInformRequest) GenerateGRPCRequest() (to *clubproto.ModifyClubInformRequest) {
+	to = new(clubproto.ModifyClubInformRequest)
+	to.ClubConcept = from.ClubConcept
+	to.Introduction = from.Introduction
+	to.Link = from.Link
+
+	if from.Logo != nil {
+		to.Logo = make([]byte, from.Logo.Size)
+		file, _ := from.Logo.Open()
+		defer func() { _ = file.Close() }()
+		_, _ = file.Read(to.Logo)
+	}
+
+	return
+}
