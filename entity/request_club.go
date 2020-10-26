@@ -101,3 +101,14 @@ func (from AddClubMemberRequest) GenerateGRPCRequest() (to *clubproto.AddClubMem
 	to.StudentUUID = from.StudentUUID
 	return
 }
+
+// request entity for GET /v1/recruitment-uuids
+type ChangeClubLeaderRequest struct {
+	NewLeaderUUID string `form:"new_leader_uuid" validate:"required,uuid=student,len=20"`
+}
+
+func (from ChangeClubLeaderRequest) GenerateGRPCRequest() (to *clubproto.ChangeClubLeaderRequest) {
+	to = new(clubproto.ChangeClubLeaderRequest)
+	to.NewLeaderUUID = from.NewLeaderUUID
+	return
+}
