@@ -854,7 +854,6 @@ func (h *_default) RegisterRecruitment(c *gin.Context) {
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.UUID = uuidClaims.UUID
-		rpcReq.ClubUUID = c.Param("club_uuid")
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.clubService.RegisterRecruitment(ctxForReq, rpcReq, callOpts...)
 		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))

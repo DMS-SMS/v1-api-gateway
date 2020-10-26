@@ -137,19 +137,21 @@ func (from ModifyClubInformRequest) GenerateGRPCRequest() (to *clubproto.ModifyC
 	return
 }
 
-// request entity for POST /v1/clubs/uuid/:club_uuid/recruitments
+// request entity for POST /v1/recruitments
 type RegisterRecruitmentRequest struct {
+	ClubUUID       string `json:"club_uuid" validate:"required"`
 	RecruitConcept string `json:"recruit_concept" validate:"required,max=40"`
-	EndPeriod      string `json:"end_period" validate:"time,len=10"`
+	EndPeriod      string `json:"end_period" validate:"time,max=10"`
 	Members        []struct {
-		Grade  int `json:"grade" validate:"required,int_range=1~3"`
+		Grade  int    `json:"grade" validate:"required,int_range=1~3"`
 		Field  string `json:"field" validate:"required,max=20"`
-		Number int `json:"number" validate:"required,int_range=1~10"`
+		Number int    `json:"number" validate:"required,int_range=1~10"`
 	} `json:"members" validate:"required"`
 }
 
 func (from RegisterRecruitmentRequest) GenerateGRPCRequest() (to *clubproto.RegisterRecruitmentRequest) {
 	to = new(clubproto.RegisterRecruitmentRequest)
+	to.ClubUUID = from.ClubUUID
 	to.RecruitConcept = from.RecruitConcept
 	to.EndPeriod = from.EndPeriod
 	to.RecruitMembers = make([]*clubproto.RecruitMember, len(from.Members))
