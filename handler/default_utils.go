@@ -66,6 +66,8 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 	switch c.ContentType() {
 	case "multipart/form-data":
 		break
+	case "application/json":
+		break
 	case "":
 		break
 	default:
