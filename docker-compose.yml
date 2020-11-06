@@ -15,3 +15,4 @@ networks:
   dms_sms_local:
     name: dms_sms_local
     driver: bridge
+    
