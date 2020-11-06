@@ -2,20 +2,18 @@ package jwt
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	"io/ioutil"
-	"path/filepath"
+	"log"
+	"os"
 )
 
-func GenerateStringWithClaims(claims jwt.Claims, method jwt.SigningMethod) (ss string, err error) {
-	keyPath, err := filepath.Abs("tool/jwt/jwt_key.priv")
-	if err != nil {
-		return
+var jwtKey string
+func init() {
+	if jwtKey = os.Getenv("JWT_SECRET_KEY"); jwtKey == "" {
+		log.Fatal("please set JWT_SECRET_KEY in environment e")
 	}
-	jwtKey, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return
-	}
+}
 
-	ss, err = jwt.NewWithClaims(method, claims).SignedString(jwtKey)
+func GenerateStringWithClaims(claims jwt.Claims, method jwt.SigningMethod) (ss string, err error) {
+	ss, err = jwt.NewWithClaims(method, claims).SignedString([]byte(jwtKey))
 	return
 }
