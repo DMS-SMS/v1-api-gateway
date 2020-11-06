@@ -1,8 +1,8 @@
 version: '3.5'
 services:
-  service-auth:
+  api-gateway:
     image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
-    container_name: service-club
+    container_name: api-gateway
     networks:
       - dms_sms_local
     ports:
