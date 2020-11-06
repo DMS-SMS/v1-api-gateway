@@ -146,9 +146,10 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 		status, _code := http.StatusOK, 0
 		msg := "succeed to login student auth"
 		jwtToken, _ := jwtutil.GenerateStringWithClaims(jwtutil.UUIDClaims{
-			UUID:           rpcResp.LoggedInStudentUUID,
+			UUID: rpcResp.LoggedInStudentUUID,
+			Type: "access_token",
 			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
+				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "student_uuid": rpcResp.LoggedInStudentUUID}

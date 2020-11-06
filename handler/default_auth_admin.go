@@ -610,9 +610,10 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 		status, _code := http.StatusOK, 0
 		msg := "succeed to login admin auth"
 		jwtToken, _ := jwtutil.GenerateStringWithClaims(jwtutil.UUIDClaims{
-			UUID:           rpcResp.LoggedInAdminUUID,
+			UUID: rpcResp.LoggedInAdminUUID,
+			Type: "access_token",
 			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
+				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "admin_uuid": rpcResp.LoggedInAdminUUID}

@@ -146,9 +146,10 @@ func (h *_default) LoginParentAuth(c *gin.Context) {
 		status, _code := http.StatusOK, 0
 		msg := "succeed to login parent auth"
 		jwtToken, _ := jwtutil.GenerateStringWithClaims(jwtutil.UUIDClaims{
-			UUID:           rpcResp.LoggedInParentUUID,
+			UUID: rpcResp.LoggedInParentUUID,
+			Type: "access_token",
 			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour*24).Unix(),
+				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			},
 		}, jwt.SigningMethodHS512)
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "parent_uuid": rpcResp.LoggedInParentUUID}
