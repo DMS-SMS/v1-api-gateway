@@ -71,29 +71,29 @@ func (from GetRecruitmentsSortByCreateTimeRequest) GenerateGRPCRequest() (to *cl
 
 // request entity for GET /v1/clubs
 type GetClubInformsWithUUIDsRequest struct {
-	ClubUUIDs string `form:"club_uuids" validate:"required"`
+	ClubUUIDs []string `json:"club_uuids" validate:"required"`
 }
 
 func (from GetClubInformsWithUUIDsRequest) GenerateGRPCRequest() (to *clubproto.GetClubInformsWithUUIDsRequest) {
 	to = new(clubproto.GetClubInformsWithUUIDsRequest)
-	to.ClubUUIDs = strings.Split(from.ClubUUIDs, "|")
+	to.ClubUUIDs = from.ClubUUIDs
 	return
 }
 
 // request entity for GET /v1/recruitment-uuids
 type GetRecruitmentUUIDsWithClubUUIDsRequest struct {
-	ClubUUIDs string `form:"club_uuids" validate:"required"`
+	ClubUUIDs []string `json:"club_uuids" validate:"required"`
 }
 
 func (from GetRecruitmentUUIDsWithClubUUIDsRequest) GenerateGRPCRequest() (to *clubproto.GetRecruitmentUUIDsWithClubUUIDsRequest) {
 	to = new(clubproto.GetRecruitmentUUIDsWithClubUUIDsRequest)
-	to.ClubUUIDs = strings.Split(from.ClubUUIDs, "|")
+	to.ClubUUIDs = from.ClubUUIDs
 	return
 }
 
 // request entity for GET /v1/clubs/uuid/:club_uuid/members
 type AddClubMemberRequest struct {
-	StudentUUID string `form:"student_uuid" validate:"required,uuid=student,len=20"`
+	StudentUUID string `json:"student_uuid" validate:"required,uuid=student,len=20"`
 }
 
 func (from AddClubMemberRequest) GenerateGRPCRequest() (to *clubproto.AddClubMemberRequest) {
@@ -104,7 +104,7 @@ func (from AddClubMemberRequest) GenerateGRPCRequest() (to *clubproto.AddClubMem
 
 // request entity for PUT /v1/clubs/uuid/:club_uuid/leader
 type ChangeClubLeaderRequest struct {
-	NewLeaderUUID string `form:"new_leader_uuid" validate:"required,uuid=student,len=20"`
+	NewLeaderUUID string `json:"new_leader_uuid" validate:"required,uuid=student,len=20"`
 }
 
 func (from ChangeClubLeaderRequest) GenerateGRPCRequest() (to *clubproto.ChangeClubLeaderRequest) {
