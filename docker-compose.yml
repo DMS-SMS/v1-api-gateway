@@ -10,9 +10,9 @@ services:
     environment:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
 
 networks:
   dms_sms_local:
     name: dms_sms_local
     driver: bridge
-    
