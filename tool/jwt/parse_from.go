@@ -3,21 +3,11 @@ package jwt
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	"io/ioutil"
-	"path/filepath"
 )
 
 func ParseUUIDClaimsFrom(tokenStr string) (claims *UUIDClaims, err error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &UUIDClaims{}, func(t *jwt.Token) (jwtKey interface{}, err error) {
-		keyPath, err := filepath.Abs("tool/jwt/jwt_key.priv")
-		if err != nil {
-			return
-		}
-		jwtKey, err = ioutil.ReadFile(keyPath)
-		if err != nil {
-			return
-		}
-		return
+	token, err := jwt.ParseWithClaims(tokenStr, &UUIDClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(jwtKey), nil
 	})
 	if err != nil {
 		return
