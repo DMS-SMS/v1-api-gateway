@@ -105,7 +105,7 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.UUID = uuidClaims.UUID
-		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		callOpts := []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 6), client.WithAddress(selectedNode.Address)}
 		rpcResp, rpcErr = h.authService.CreateNewStudent(ctxForReq, rpcReq, callOpts...)
 		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()

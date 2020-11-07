@@ -558,7 +558,7 @@ func (h *_default) ModifyClubInform(c *gin.Context) {
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.UUID = uuidClaims.UUID
 		rpcReq.ClubUUID = c.Param("club_uuid")
-		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		callOpts := []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 6), client.WithAddress(selectedNode.Address)}
 		rpcResp, rpcErr = h.clubService.ModifyClubInform(ctxForReq, rpcReq, callOpts...)
 		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()

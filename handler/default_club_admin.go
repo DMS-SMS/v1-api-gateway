@@ -104,7 +104,7 @@ func (h *_default) CreateNewClub(c *gin.Context) {
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.UUID = uuidClaims.UUID
-		callOpts := []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 4), client.WithAddress(selectedNode.Address)}
+		callOpts := []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 7), client.WithAddress(selectedNode.Address)}
 		rpcResp, rpcErr = h.clubService.CreateNewClub(ctxForReq, rpcReq, callOpts...)
 		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		authSrvSpan.Finish()
