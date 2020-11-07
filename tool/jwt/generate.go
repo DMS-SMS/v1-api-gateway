@@ -9,7 +9,7 @@ import (
 var jwtKey string
 func init() {
 	if jwtKey = os.Getenv("JWT_SECRET_KEY"); jwtKey == "" {
-		log.Fatal("please set JWT_SECRET_KEY in environment e")
+		log.Fatal("please set JWT_SECRET_KEY in environment variable")
 	}
 }
 
