@@ -609,7 +609,7 @@ func (h *_default) GetTeacherUUIDsWithInform(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get teacher uuid list with inform"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "uuids": rpcResp.TeacherUUIDs}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "teacher_uuids": rpcResp.TeacherUUIDs}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()

@@ -608,7 +608,7 @@ func (h *_default) GetParentUUIDsWithInform(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get parent uuid list with inform"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "uuids": rpcResp.ParentUUIDs}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "parent_uuids": rpcResp.ParentUUIDs}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()

@@ -514,6 +514,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
+	fmt.Println(receivedReq)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
@@ -609,7 +610,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get student uuid list with inform"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "uuids": rpcResp.StudentUUIDs}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "student_uuids": rpcResp.StudentUUIDs}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
