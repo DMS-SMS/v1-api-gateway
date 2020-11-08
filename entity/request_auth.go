@@ -3,7 +3,6 @@ package entity
 import (
 	authproto "gateway/proto/golang/auth"
 	"mime/multipart"
-	"strings"
 )
 
 // request entity of POST /v1/students
@@ -40,12 +39,12 @@ func (from CreateNewStudentRequest) GenerateGRPCRequest() (to *authproto.CreateN
 
 // request entity of POST /v1/teachers
 type CreateNewTeacherRequest struct {
-	TeacherID   string `form:"teacher_id" validate:"required,min=4,max=16"`
-	TeacherPW   string `form:"teacher_pw" validate:"required,min=4,max=16"`
-	Grade       int    `form:"grade" validate:"int_range=0~3"`
-	Group       int    `form:"group" validate:"int_range=0~4"`
-	Name        string `form:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber string `form:"phone_number" validate:"required,phone_number,len=11"`
+	TeacherID   string `json:"teacher_id" validate:"required,min=4,max=16"`
+	TeacherPW   string `json:"teacher_pw" validate:"required,min=4,max=16"`
+	Grade       int    `json:"grade" validate:"int_range=0~3"`
+	Group       int    `json:"group" validate:"int_range=0~4"`
+	Name        string `json:"name" validate:"required,korean,min=2,max=4"`
+	PhoneNumber string `json:"phone_number" validate:"required,phone_number,len=11"`
 }
 
 func (from CreateNewTeacherRequest) GenerateGRPCRequest() (to *authproto.CreateNewTeacherRequest) {
@@ -61,10 +60,10 @@ func (from CreateNewTeacherRequest) GenerateGRPCRequest() (to *authproto.CreateN
 
 // request entity of POST /v1/parents
 type CreateNewParentRequest struct {
-	ParentID    string `form:"parent_id" validate:"required,min=4,max=16"`
-	ParentPW    string `form:"parent_pw" validate:"required,min=4,max=16"`
-	Name        string `form:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber string `form:"phone_number" validate:"required,phone_number,len=11"`
+	ParentID    string `json:"parent_id" validate:"required,min=4,max=16"`
+	ParentPW    string `json:"parent_pw" validate:"required,min=4,max=16"`
+	Name        string `json:"name" validate:"required,korean,min=2,max=4"`
+	PhoneNumber string `json:"phone_number" validate:"required,phone_number,len=11"`
 }
 
 func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNewParentRequest) {
@@ -117,11 +116,11 @@ func (from ChangeStudentPWRequest) GenerateGRPCRequest() (to *authproto.ChangeSt
 
 // request entity for GET /v1/student-uuids
 type GetStudentUUIDsWithInformRequest struct {
-	Grade         int    `json:"grade" validate:"int_range=0~3"`
-	Group         int    `json:"group" validate:"int_range=0~4"`
-	StudentNumber int    `json:"student_number" validate:"int_range=0~21"`
-	Name          string `json:"name" validate:"korean"`
-	PhoneNumber   string `json:"phone_number" validate:"phone_number"`
+	Grade         int    `json:"grade"`
+	Group         int    `json:"group"`
+	StudentNumber int    `json:"student_number"`
+	Name          string `json:"name"`
+	PhoneNumber   string `json:"phone_number"`
 	ProfileURI    string `json:"profile_uri"`
 }
 
@@ -138,12 +137,12 @@ func (from GetStudentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authprot
 
 // request entity for GET /v1/students
 type GetStudentInformsWithUUIDsRequest struct {
-	StudentUUIDs string `json:"student_uuids" validate:"required"`
+	StudentUUIDs []string `json:"student_uuids" validate:"required"`
 }
 
 func (from GetStudentInformsWithUUIDsRequest) GenerateGRPCRequest() (to *authproto.GetStudentInformsWithUUIDsRequest) {
 	to = new(authproto.GetStudentInformsWithUUIDsRequest)
-	to.StudentUUIDs = strings.Split(from.StudentUUIDs, "|")
+	to.StudentUUIDs = from.StudentUUIDs
 	return
 }
 
@@ -175,10 +174,10 @@ func (from ChangeTeacherPWRequest) GenerateGRPCRequest() (to *authproto.ChangeTe
 
 // request entity for GET /v1/teacher-uuids
 type GetTeacherUUIDsWithInformRequest struct {
-	Grade         int    `json:"grade" validate:"int_range=0~3"`
-	Group         int    `json:"group" validate:"int_range=0~4"`
-	Name          string `json:"name" validate:"korean"`
-	PhoneNumber   string `json:"phone_number" validate:"phone_number"`
+	Grade         int    `json:"grade"`
+	Group         int    `json:"group"`
+	Name          string `json:"name"`
+	PhoneNumber   string `json:"phone_number"`
 }
 
 func (from GetTeacherUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto.GetTeacherUUIDsWithInformRequest) {
@@ -218,8 +217,8 @@ func (from ChangeParentPWRequest) GenerateGRPCRequest() (to *authproto.ChangePar
 
 // request entity for GET /v1/parent-uuids
 type GetParentUUIDsWithInformRequest struct {
-	Name          string `json:"name" validate:"korean"`
-	PhoneNumber   string `json:"phone_number" validate:"phone_number"`
+	Name          string `json:"name"`
+	PhoneNumber   string `json:"phone_number"`
 }
 
 func (from GetParentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto.GetParentUUIDsWithInformRequest) {
