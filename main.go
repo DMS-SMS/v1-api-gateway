@@ -8,6 +8,7 @@ import (
 	clubproto "gateway/proto/golang/club"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/consul/api"
 	"github.com/micro/go-micro/v2/client"
@@ -87,7 +88,7 @@ func main() {
 	)
 
 	router := gin.Default()
-	router.Use(middleware.DosDetector(), middleware.Correlator(), middleware.LogEntrySetter(logrus.New()))
+	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator(), middleware.LogEntrySetter(logrus.New()))
 
 	// auth service api for admin
 	router.POST("/v1/students", httpHandler.CreateNewStudent)
@@ -118,8 +119,8 @@ func main() {
 	router.POST("/v1/clubs", httpHandler.CreateNewClub)
 
 	// club service api for student
-	router.GET("/v1/clubs/sorted-by/update", httpHandler.GetClubsSortByUpdateTime)
-	router.GET("/v1/recruitments/sorted-by/create", httpHandler.GetRecruitmentsSortByCreateTime)
+	router.GET("/v1/clubs/sorted-by/update-time", httpHandler.GetClubsSortByUpdateTime)
+	router.GET("/v1/recruitments/sorted-by/create-time", httpHandler.GetRecruitmentsSortByCreateTime)
 	router.GET("/v1/clubs/uuid/:club_uuid", httpHandler.GetClubInformWithUUID)
 	router.GET("/v1/clubs", httpHandler.GetClubInformsWithUUIDs)
 	router.GET("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.GetRecruitmentInformWithUUID)
