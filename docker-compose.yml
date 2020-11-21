@@ -1,0 +1,18 @@
+version: '3.5'
+services:
+  api-gateway:
+    image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
+    container_name: api-gateway
+    networks:
+      - dms_sms_local
+    ports:
+      - 8080:8080
+    environment:
+      - CONSUL_ADDRESS=${CONSUL_ADDRESS}
+      - JAEGER_ADDRESS=${JAEGER_ADDRESS}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
+networks:
+  dms_sms_local:
+    name: dms_sms_local
+    driver: bridge
