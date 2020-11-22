@@ -4,7 +4,7 @@ services:
     image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
     container_name: api-gateway
     networks:
-      - dms_sms_local
+      - dms-sms-local
     ports:
       - 8080:8080
     environment:
@@ -13,6 +13,6 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
 
 networks:
-  dms_sms_local:
-    name: dms_sms_local
+  dms-sms-local:
+    name: dms-sms-local
     driver: bridge
