@@ -19,3 +19,11 @@ pull:
 .PHONY: run
 run:
 	docker-compose -f ./docker-compose.yml up -d
+
+.PHONY: service
+service:
+	kubectl apply -f ./api-gateway-service.yaml
+
+.PHONY: deploy
+deploy:
+	envsubst < ./api-gateway-deployment.yaml | kubectl apply -f -
