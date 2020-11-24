@@ -25,15 +25,15 @@ spec:
         io.kompose.network/elk: "true"
         io.kompose.service: filebeat
     spec:
-#      initContainers:
-#        - name: initcontainer
-#          image: alpine:latest
-#          command: ["/bin/sh", "-c"]
-#          args:
-#            - chmod ugo+rwx /usr/share/filebeat/log/dms-sms
-#          volumeMounts:
-#            - mountPath: /usr/share/filebeat/log/dms-sms
-#              name: log-data
+      initContainers:
+        - name: initcontainer
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - chmod ugo+rwx /usr/share/filebeat/log/dms-sms
+          volumeMounts:
+            - mountPath: /usr/share/filebeat/log/dms-sms
+              name: log-data
       containers:
         - image: elastic/filebeat:7.9.3
           name: filebeat
@@ -51,6 +51,6 @@ spec:
             claimName: log-data
         - name: filebeat
           hostPath:
-            path: /Users/parkjinhong/SMS/v1/gateway/filebeat.yml
+            path: $FILEBEAT_DIRECTORY/filebeat.yml
             type: FileOrCreate
 status: {}
