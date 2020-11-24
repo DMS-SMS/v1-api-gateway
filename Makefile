@@ -29,6 +29,14 @@ log_volume:
 	kubectl apply -f ./log-data-persistentvolume.yaml
 	kubectl apply -f ./log-data-persistentvolumeclaim.yaml
 
-.PHONY: deploy
+.PHONY: api_gateway_deploy
 deploy:
 	envsubst < ./api-gateway-deployment.yaml | kubectl apply -f -
+
+.PHONY: filebeat_run
+filebeat_run:
+	docker-compose -f ./filebeat-docker-compose.yml up -d
+
+.PHONY: filebeat_deploy
+filebeat_deploy:
+	envsubst < ./filebeat-deployment.yaml | kubectl apply -f -
