@@ -11,8 +11,15 @@ services:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    volumes:
+      - log-data:/usr/share/filebeat/log/dms-sms
 
 networks:
   dms-sms-local:
     name: dms-sms-local
     driver: bridge
+
+volumes:
+  log-data:
+    name: log-data
+    driver: local
