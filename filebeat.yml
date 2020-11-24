@@ -1,0 +1,26 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+filebeat.inputs:
+  - input_type: log
+    enable: true
+    paths:
+      - /usr/share/filebeat/log/dms-sms/*.log
+    # multiline.pattern: '^[[:space:]]'
+    multiline.pattern: '^{.*'
+    multiline.negate: false
+    multiline.match: after
+    fields:
+      server: dms-sms
+    scan_frequency: 3s
+
+output.logstash:
+  hosts: ['logstash:5044']
+
+setup.kibana:
+  host: ['kibana:5601']
+
+filebeat.shutdown_timeout: 10s
+name: "dms-sms"
