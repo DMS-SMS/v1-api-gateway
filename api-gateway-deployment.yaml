@@ -13,7 +13,8 @@ spec:
   selector:
     matchLabels:
       io.kompose.service: api-gateway
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -37,5 +38,12 @@ spec:
           ports:
             - containerPort: 8080
           resources: {}
+          volumeMounts:
+            - mountPath: /usr/share/filebeat/log/dms-sms
+              name: log-data
       restartPolicy: Always
+      volumes:
+        - name: log-data
+          persistentVolumeClaim:
+            claimName: log-data
 status: {}
