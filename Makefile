@@ -24,6 +24,11 @@ run:
 service:
 	kubectl apply -f ./api-gateway-service.yaml
 
+.PHONY: log_volume
+log_volume:
+	kubectl apply -f ./log-data-persistentvolume.yaml
+	kubectl apply -f ./log-data-persistentvolumeclaim.yaml
+
 .PHONY: deploy
 deploy:
 	envsubst < ./api-gateway-deployment.yaml | kubectl apply -f -
