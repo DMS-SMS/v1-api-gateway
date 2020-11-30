@@ -9,12 +9,12 @@ filebeat.inputs:
     paths:
       - /usr/share/filebeat/log/dms-sms/*.log
     # multiline.pattern: '^[[:space:]]'
-    multiline.pattern: '^{.*'
-    multiline.negate: false
-    multiline.match: after
+#    multiline.pattern: '^{.*'
+#    multiline.negate: false
+#    multiline.match: after
     fields:
       server: dms-sms
-    scan_frequency: 3s
+#    scan_frequency: 3s
 
 output.logstash:
   hosts: ['logstash:5044']
