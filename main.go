@@ -8,6 +8,7 @@ import (
 	clubproto "gateway/proto/golang/club"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
+	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/consul/api"
@@ -87,59 +88,71 @@ func main() {
 		handler.ClubService(clubSrvCli),
 	)
 
+	// create log file & logger
+	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
+		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
+	}
+	authLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/auth.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
+	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
+	authLogger := logrus.New()
+	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
+	clubLogger := logrus.New()
+	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
+
 	router := gin.Default()
-	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator(), middleware.LogEntrySetter(logrus.New()))
+	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator())
 
+	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
-	router.POST("/v1/students", httpHandler.CreateNewStudent)
-	router.POST("/v1/teachers", httpHandler.CreateNewTeacher)
-	router.POST("/v1/parents", httpHandler.CreateNewParent)
-	router.POST("/v1/login/admin", httpHandler.LoginAdminAuth)
-
+	authRouter.POST("/v1/students", httpHandler.CreateNewStudent)
+	authRouter.POST("/v1/teachers", httpHandler.CreateNewTeacher)
+	authRouter.POST("/v1/parents", httpHandler.CreateNewParent)
+	authRouter.POST("/v1/login/admin", httpHandler.LoginAdminAuth)
 	// auth service api for student
-	router.POST("/v1/login/student", httpHandler.LoginStudentAuth)
-	router.PUT("/v1/students/uuid/:student_uuid/password", httpHandler.ChangeStudentPW)
-	router.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
-	router.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
-	router.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
-
+	authRouter.POST("/v1/login/student", httpHandler.LoginStudentAuth)
+	authRouter.PUT("/v1/students/uuid/:student_uuid/password", httpHandler.ChangeStudentPW)
+	authRouter.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
+	authRouter.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
+	authRouter.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
 	// auth service api for teacher
-	router.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
-	router.PUT("/v1/teachers/uuid/:teacher_uuid/password", httpHandler.ChangeTeacherPW)
-	router.GET("/v1/teachers/uuid/:teacher_uuid", httpHandler.GetTeacherInformWithUUID)
-	router.GET("/v1/teacher-uuids", httpHandler.GetTeacherUUIDsWithInform)
-
+	authRouter.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
+	authRouter.PUT("/v1/teachers/uuid/:teacher_uuid/password", httpHandler.ChangeTeacherPW)
+	authRouter.GET("/v1/teachers/uuid/:teacher_uuid", httpHandler.GetTeacherInformWithUUID)
+	authRouter.GET("/v1/teacher-uuids", httpHandler.GetTeacherUUIDsWithInform)
 	// auth service api for parent
-	router.POST("/v1/login/parent", httpHandler.LoginParentAuth)
-	router.PUT("/v1/parents/uuid/:parent_uuid/password", httpHandler.ChangeParentPW)
-	router.GET("/v1/parents/uuid/:parent_uuid", httpHandler.GetParentInformWithUUID)
-	router.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
+	authRouter.POST("/v1/login/parent", httpHandler.LoginParentAuth)
+	authRouter.PUT("/v1/parents/uuid/:parent_uuid/password", httpHandler.ChangeParentPW)
+	authRouter.GET("/v1/parents/uuid/:parent_uuid", httpHandler.GetParentInformWithUUID)
+	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
 
+
+	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
-	router.POST("/v1/clubs", httpHandler.CreateNewClub)
-
+	clubRouter.POST("/v1/clubs", httpHandler.CreateNewClub)
 	// club service api for student
-	router.GET("/v1/clubs/sorted-by/update-time", httpHandler.GetClubsSortByUpdateTime)
-	router.GET("/v1/recruitments/sorted-by/create-time", httpHandler.GetRecruitmentsSortByCreateTime)
-	router.GET("/v1/clubs/uuid/:club_uuid", httpHandler.GetClubInformWithUUID)
-	router.GET("/v1/clubs", httpHandler.GetClubInformsWithUUIDs)
-	router.GET("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.GetRecruitmentInformWithUUID)
-	router.GET("/v1/clubs/uuid/:club_uuid/recruitment-uuid", httpHandler.GetRecruitmentUUIDWithClubUUID)
-	router.GET("/v1/recruitment-uuids", httpHandler.GetRecruitmentUUIDsWithClubUUIDs)
-	router.GET("/v1/clubs/property/fields", httpHandler.GetAllClubFields)
-	router.GET("/v1/clubs/count", httpHandler.GetTotalCountOfClubs)
-	router.GET("/v1/recruitments/count", httpHandler.GetTotalCountOfCurrentRecruitments)
-	router.GET("/v1/leaders/uuid/:leader_uuid/club-uuid", httpHandler.GetClubUUIDWithLeaderUUID)
+	clubRouter.GET("/v1/clubs/sorted-by/update-time", httpHandler.GetClubsSortByUpdateTime)
+	clubRouter.GET("/v1/recruitments/sorted-by/create-time", httpHandler.GetRecruitmentsSortByCreateTime)
+	clubRouter.GET("/v1/clubs/uuid/:club_uuid", httpHandler.GetClubInformWithUUID)
+	clubRouter.GET("/v1/clubs", httpHandler.GetClubInformsWithUUIDs)
+	clubRouter.GET("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.GetRecruitmentInformWithUUID)
+	clubRouter.GET("/v1/clubs/uuid/:club_uuid/recruitment-uuid", httpHandler.GetRecruitmentUUIDWithClubUUID)
+	clubRouter.GET("/v1/recruitment-uuids", httpHandler.GetRecruitmentUUIDsWithClubUUIDs)
+	clubRouter.GET("/v1/clubs/property/fields", httpHandler.GetAllClubFields)
+	clubRouter.GET("/v1/clubs/count", httpHandler.GetTotalCountOfClubs)
+	clubRouter.GET("/v1/recruitments/count", httpHandler.GetTotalCountOfCurrentRecruitments)
+	clubRouter.GET("/v1/leaders/uuid/:leader_uuid/club-uuid", httpHandler.GetClubUUIDWithLeaderUUID)
 
 	// club service api for club leader
-	router.POST("/v1/clubs/uuid/:club_uuid/members", httpHandler.AddClubMember)
-	router.DELETE("/v1/clubs/uuid/:club_uuid/members/:student_uuid", httpHandler.DeleteClubMember)
-	router.PUT("/v1/clubs/uuid/:club_uuid/leader", httpHandler.ChangeClubLeader)
-	router.PATCH("/v1/clubs/uuid/:club_uuid", httpHandler.ModifyClubInform)
-	router.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
-	router.POST("/v1/recruitments", httpHandler.RegisterRecruitment)
-	router.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
-	router.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
+	clubRouter.POST("/v1/clubs/uuid/:club_uuid/members", httpHandler.AddClubMember)
+	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid/members/:student_uuid", httpHandler.DeleteClubMember)
+	clubRouter.PUT("/v1/clubs/uuid/:club_uuid/leader", httpHandler.ChangeClubLeader)
+	clubRouter.PATCH("/v1/clubs/uuid/:club_uuid", httpHandler.ModifyClubInform)
+	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
+	clubRouter.POST("/v1/recruitments", httpHandler.RegisterRecruitment)
+	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
+	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
 
 	log.Fatal(router.Run(":8080"))
 }
