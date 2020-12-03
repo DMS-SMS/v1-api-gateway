@@ -3,6 +3,7 @@ package handler
 import (
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	outingproto "gateway/proto/golang/outing"
 	"gateway/tool/consul"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
@@ -24,6 +25,11 @@ type _default struct {
 		clubproto.ClubAdminService
 		clubproto.ClubStudentService
 		clubproto.ClubLeaderService
+	}
+	outingService interface {
+		outingproto.OutingStudentService
+		outingproto.OutingTeacherService
+		outingproto.OutingParentsService
 	}
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -79,6 +85,16 @@ func ClubService(clubService struct {
 }) FieldSetter {
 	return func(h *_default) {
 		h.clubService = clubService
+	}
+}
+
+func OutingService(outingService interface {
+	outingproto.OutingStudentService
+	outingproto.OutingTeacherService
+	outingproto.OutingParentsService
+}) FieldSetter {
+	return func(h *_default) {
+		h.outingService = outingService
 	}
 }
 
