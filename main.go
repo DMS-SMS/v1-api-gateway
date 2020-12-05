@@ -6,6 +6,7 @@ import (
 	"gateway/middleware"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	outingproto "gateway/proto/golang/outing"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
 	"github.com/bshuster-repo/logrus-logstash-hook"
@@ -78,6 +79,15 @@ func main() {
 		ClubStudentService: clubproto.NewClubStudentService(topic.ClubServiceName, gRPCCli),
 		ClubLeaderService:  clubproto.NewClubLeaderService(topic.ClubServiceName, gRPCCli),
 	}
+	outingSrvCli := struct {
+		outingproto.OutingStudentService
+		outingproto.OutingTeacherService
+		outingproto.OutingParentsService
+	} {
+		OutingStudentService: outingproto.NewOutingStudentService(topic.OutingServiceName, client.NewClient(client.Transport(grpc.NewTransport()))),
+		OutingTeacherService: outingproto.NewOutingTeacherService(topic.OutingServiceName, gRPCCli),
+		OutingParentsService: outingproto.NewOutingParentsService(topic.OutingServiceName, gRPCCli),
+	}
 
 	// create http request handler
 	httpHandler := handler.Default(
@@ -86,6 +96,7 @@ func main() {
 		handler.Tracer(apiTracer),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
+		handler.OutingService(outingSrvCli),
 	)
 
 	// create log file & logger
@@ -96,10 +107,14 @@ func main() {
 	if err != nil { log.Fatal(err) }
 	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil { log.Fatal(err) }
+	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
 	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
+	outingLogger := logrus.New()
+	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
 
 	router := gin.Default()
 	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator())
@@ -127,7 +142,6 @@ func main() {
 	authRouter.GET("/v1/parents/uuid/:parent_uuid", httpHandler.GetParentInformWithUUID)
 	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
 
-
 	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
 	clubRouter.POST("/v1/clubs", httpHandler.CreateNewClub)
@@ -153,6 +167,9 @@ func main() {
 	clubRouter.POST("/v1/recruitments", httpHandler.RegisterRecruitment)
 	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
+
+	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
+	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", httpHandler.GetStudentOutings)
 
 	log.Fatal(router.Run(":8080"))
 }
