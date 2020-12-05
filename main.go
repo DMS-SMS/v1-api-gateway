@@ -116,8 +116,13 @@ func main() {
 	outingLogger := logrus.New()
 	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
 
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization")
+	corsHandler := cors.New(corsConfig)
+	router.Use(corsHandler, middleware.DosDetector(), middleware.Correlator())
 
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
