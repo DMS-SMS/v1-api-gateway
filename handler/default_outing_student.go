@@ -315,6 +315,7 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 		outings := make([]map[string]interface{}, len(rpcResp.Outing))
 		for index, outing := range rpcResp.Outing {
 			outings[index] = map[string]interface{}{
+				"outing_uuid":      outing.OutingId,
 				"place":            outing.Place,
 				"reason":           outing.Reason,
 				"start_time":       outing.StartTime,
