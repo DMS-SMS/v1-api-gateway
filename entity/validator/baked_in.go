@@ -79,3 +79,14 @@ func isTime(fl validator.FieldLevel) bool {
 	}
 	return timeRegex.MatchString(fl.Field().String())
 }
+
+func isValidValue(fl validator.FieldLevel) bool {
+	availableValues := strings.Split(fl.Param(), "&")
+	value := fl.Field().String()
+	for _, availableValue := range availableValues {
+		if availableValue == value {
+			return true
+		}
+	}
+	return false
+}
