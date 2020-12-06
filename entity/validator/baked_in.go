@@ -90,3 +90,11 @@ func isValidValue(fl validator.FieldLevel) bool {
 	}
 	return false
 }
+
+func isCorrectIntLen(fl validator.FieldLevel) bool {
+	intLen, _ := strconv.Atoi(fl.Param())
+	if len(strconv.Itoa(int(fl.Field().Int()))) == intLen {
+		return true
+	}
+	return false
+}
