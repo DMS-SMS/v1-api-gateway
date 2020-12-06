@@ -84,9 +84,9 @@ func main() {
 		outingproto.OutingTeacherService
 		outingproto.OutingParentsService
 	} {
-		OutingStudentService: outingproto.NewOutingStudentService(topic.OutingServiceName, client.NewClient(client.Transport(grpc.NewTransport()))),
-		OutingTeacherService: outingproto.NewOutingTeacherService(topic.OutingServiceName, gRPCCli),
-		OutingParentsService: outingproto.NewOutingParentsService(topic.OutingServiceName, gRPCCli),
+		OutingStudentService: outingproto.NewOutingStudentService("", gRPCCli),
+		OutingTeacherService: outingproto.NewOutingTeacherService("", gRPCCli),
+		OutingParentsService: outingproto.NewOutingParentsService("", gRPCCli),
 	}
 
 	// create http request handler
