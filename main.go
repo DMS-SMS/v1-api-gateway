@@ -174,7 +174,11 @@ func main() {
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
 
 	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
+	outingRouter.POST("/v1/outings", httpHandler.CreateOuting)
 	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", httpHandler.GetStudentOutings)
+	outingRouter.GET("/v1/outings/uuid/:outing_uuid", httpHandler.GetOutingInform)
+	outingRouter.GET("/v1/outings/uuid/:outing_uuid/card", httpHandler.GetCardAboutOuting)
+	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", httpHandler.TakeActionInOuting)
 
 	log.Fatal(router.Run(":8080"))
 }
