@@ -11,6 +11,10 @@ type GetStudentOutingsRequest struct {
 }
 
 func (from GetStudentOutingsRequest) GenerateGRPCRequest() (to *outingproto.GetStudentOutingsRequest) {
+	if from.Count == 0 {
+		from.Count = 10
+	}
+
 	to = new(outingproto.GetStudentOutingsRequest)
 	to.Start = from.Start
 	to.Count = from.Count
