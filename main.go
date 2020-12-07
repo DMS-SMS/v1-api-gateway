@@ -136,6 +136,7 @@ func main() {
 	authRouter.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
 	authRouter.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
 	authRouter.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
+	authRouter.GET("/v1/students/uuid/:student_uuid/parent", httpHandler.GetParentWithStudentUUID)
 	// auth service api for teacher
 	authRouter.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
 	authRouter.PUT("/v1/teachers/uuid/:teacher_uuid/password", httpHandler.ChangeTeacherPW)
@@ -179,6 +180,7 @@ func main() {
 	outingRouter.GET("/v1/outings/uuid/:outing_uuid", httpHandler.GetOutingInform)
 	outingRouter.GET("/v1/outings/uuid/:outing_uuid/card", httpHandler.GetCardAboutOuting)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", httpHandler.TakeActionInOuting)
+	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
 
 	log.Fatal(router.Run(":8080"))
 }
