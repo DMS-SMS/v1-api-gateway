@@ -7,6 +7,7 @@ import (
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
+	scheduleproto "gateway/proto/golang/schedule"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
 	"github.com/bshuster-repo/logrus-logstash-hook"
@@ -88,6 +89,11 @@ func main() {
 		OutingTeacherService: outingproto.NewOutingTeacherService("", gRPCCli),
 		OutingParentsService: outingproto.NewOutingParentsService("", gRPCCli),
 	}
+	scheduleSrvCli := struct {
+		scheduleproto.ScheduleService
+	} {
+		ScheduleService: scheduleproto.NewScheduleService("", gRPCCli),
+	}
 
 	// create http request handler
 	httpHandler := handler.Default(
@@ -97,6 +103,7 @@ func main() {
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
 		handler.OutingService(outingSrvCli),
+		handler.ScheduleService(scheduleSrvCli),
 	)
 
 	// create log file & logger
