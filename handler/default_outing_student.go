@@ -694,6 +694,10 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 		methodName = "RejectOuting"
 	case "certify":
 		methodName = "CertifyOuting"
+	case "parent-approve":
+		methodName = "ApproveOutingByOCode"
+	case "parent-reject":
+		methodName = "RejectOutingByOCode"
 	default:
 		msg := "that action in uri is not supported"
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "code": 0, "message": msg})
@@ -842,6 +846,92 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 				rpcResp, rpcErr = h.outingService.RejectOuting(ctxForReq, rpcReq, callOpts...)
 			case "certify":
 				rpcResp, rpcErr = h.outingService.CertifyOuting(ctxForReq, rpcReq, callOpts...)
+			}
+			outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+			outingSrvSpan.Finish()
+			return
+		})
+
+		if err == breaker.ErrBreakerOpen {
+			msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcErr := err.(type) {
+		case nil:
+			break
+		case *errors.Error:
+			var status, _code int
+			var msg string
+			switch rpcErr.Code {
+			case http.StatusRequestTimeout:
+				msg = fmt.Sprintf("request time out for %s service, detail: %s", methodName, rpcErr.Detail)
+				status, _code = http.StatusRequestTimeout, 0
+			default:
+				msg = fmt.Sprintf("%s returns unexpected micro error, code: %d, detail: %s", methodName, rpcErr.Code, rpcErr.Detail)
+				status, _code = http.StatusInternalServerError, 0
+			}
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		default:
+			status, _code := http.StatusInternalServerError, 0
+			msg := fmt.Sprintf("%s returns unexpected type of error, err: %s", methodName, rpcErr.Error())
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcResp.Status {
+		case http.StatusOK:
+			status, _code := http.StatusOK, 0
+			msg := "succeed to take action to outing"
+			sendResp := gin.H{"status": status, "code": _code, "message": msg}
+			c.JSON(status, sendResp)
+			respBytes, _ := json.Marshal(sendResp)
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		default:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		}
+
+		return
+
+	case "parent-approve", "parent-reject":
+		var rpcResp *outingproto.ConfirmOutingByOCodeResponse
+		err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+			outingSrvSpan := h.tracer.StartSpan(methodName, opentracing.ChildOf(topSpan.Context()))
+			ctxForReq := context.Background()
+			ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+			ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+			rpcReq := new(outingproto.ConfirmOutingByOCodeRequest)
+			rpcReq.ConfirmCode = c.Request.URL.Query().Get("code")
+			callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+			switch c.Param("action") {
+			case "parent-approve":
+				rpcResp, rpcErr = h.outingService.ApproveOutingByOCode(ctxForReq, rpcReq, callOpts...)
+			case "parent-reject":
+				rpcResp, rpcErr = h.outingService.RejectOutingByOCode(ctxForReq, rpcReq, callOpts...)
 			}
 			outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 			outingSrvSpan.Finish()
