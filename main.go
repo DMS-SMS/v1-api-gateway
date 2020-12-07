@@ -4,6 +4,7 @@ import (
 	"gateway/entity/validator"
 	"gateway/handler"
 	"gateway/middleware"
+	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
@@ -94,6 +95,11 @@ func main() {
 	} {
 		ScheduleService: scheduleproto.NewScheduleService("", gRPCCli),
 	}
+	announcementSrvCli := struct {
+		announcementproto.AnnouncementService
+	} {
+		AnnouncementService: announcementproto.NewAnnouncementService("", gRPCCli),
+	}
 
 	// create http request handler
 	httpHandler := handler.Default(
@@ -104,6 +110,7 @@ func main() {
 		handler.ClubService(clubSrvCli),
 		handler.OutingService(outingSrvCli),
 		handler.ScheduleService(scheduleSrvCli),
+		handler.AnnouncementService(announcementSrvCli),
 	)
 
 	// create log file & logger
