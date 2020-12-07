@@ -4,6 +4,7 @@ import (
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
+	scheduleproto "gateway/proto/golang/schedule"
 	"gateway/tool/consul"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
@@ -30,6 +31,9 @@ type _default struct {
 		outingproto.OutingStudentService
 		outingproto.OutingTeacherService
 		outingproto.OutingParentsService
+	}
+	scheduleService interface {
+		scheduleproto.ScheduleService
 	}
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -95,6 +99,14 @@ func OutingService(outingService interface {
 }) FieldSetter {
 	return func(h *_default) {
 		h.outingService = outingService
+	}
+}
+
+func ScheduleService(scheduleService interface {
+	scheduleproto.ScheduleService
+}) FieldSetter {
+	return func(h *_default) {
+		h.scheduleService = scheduleService
 	}
 }
 
