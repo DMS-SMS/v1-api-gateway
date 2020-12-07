@@ -1,6 +1,7 @@
 package handler
 
 import (
+	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
@@ -34,6 +35,9 @@ type _default struct {
 	}
 	scheduleService interface {
 		scheduleproto.ScheduleService
+	}
+	announcementService interface {
+		announcementproto.AnnouncementService
 	}
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -99,6 +103,14 @@ func OutingService(outingService interface {
 }) FieldSetter {
 	return func(h *_default) {
 		h.outingService = outingService
+	}
+}
+
+func AnnouncementService(announcementService interface {
+	announcementproto.AnnouncementService
+}) FieldSetter {
+	return func(h *_default) {
+		h.announcementService = announcementService
 	}
 }
 
