@@ -4,7 +4,7 @@ import (
 	scheduleproto "gateway/proto/golang/schedule"
 )
 
-// request entity of POST /v1/outings
+// request entity of POST /v1/schedules
 type CreateScheduleRequest struct {
 	StartDate int64  `json:"start_date" validate:"required,int_len=10"`
 	EndDate   int64  `json:"end_date" validate:"required,int_len=10"`
@@ -40,5 +40,20 @@ type GetTimeTableRequest struct {
 func (from GetTimeTableRequest) GenerateGRPCRequest() (to *scheduleproto.GetTimeTableRequest) {
 	to = new(scheduleproto.GetTimeTableRequest)
 	to.WeekNumber = from.WeekNumber
+	return
+}
+
+// request entity of PATCH /v1/schedules/uuid/{schedule_uuid}
+type UpdateScheduleRequest struct {
+	StartDate int64  `json:"start_date" validate:"required,int_len=10"`
+	EndDate   int64  `json:"end_date" validate:"required,int_len=10"`
+	Detail    string `json:"detail" validate:"required,max=100"`
+}
+
+func (from UpdateScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.UpdateScheduleRequest) {
+	to = new(scheduleproto.UpdateScheduleRequest)
+	to.StartDate = from.StartDate
+	to.EndDate = from.EndDate
+	to.Detail = from.Detail
 	return
 }
