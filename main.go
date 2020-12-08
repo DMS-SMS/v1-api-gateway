@@ -93,7 +93,7 @@ func main() {
 	scheduleSrvCli := struct {
 		scheduleproto.ScheduleService
 	} {
-		ScheduleService: scheduleproto.NewScheduleService("", gRPCCli),
+		ScheduleService: scheduleproto.NewScheduleService(topic.ScheduleServiceName, gRPCCli),
 	}
 	announcementSrvCli := struct {
 		announcementproto.AnnouncementService
@@ -123,12 +123,16 @@ func main() {
 	if err != nil { log.Fatal(err) }
 	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil { log.Fatal(err) }
+	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
 	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
 	outingLogger := logrus.New()
 	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
+	scheduleLogger := logrus.New()
+	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -195,6 +199,13 @@ func main() {
 	outingRouter.GET("/v1/outings/uuid/:outing_uuid/card", httpHandler.GetCardAboutOuting)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", httpHandler.TakeActionInOuting)
 	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
+
+	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
+	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
+	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", httpHandler.GetSchedule)
+	scheduleRouter.GET("/v1/time-tables/week-numbers/:week-number", httpHandler.GetTimeTable)
+	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
+	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
 
 	log.Fatal(router.Run(":8080"))
 }
