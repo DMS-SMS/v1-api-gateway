@@ -73,7 +73,7 @@ func (h *_default) CreateSchedule(c *gin.Context) {
 	case nil:
 		break
 	case agenterrors.AvailableNodeNotExist:
-		msg := "available outing service node is not exist in consul"
+		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
@@ -98,16 +98,16 @@ func (h *_default) CreateSchedule(c *gin.Context) {
 
 	var rpcResp *scheduleproto.DefaultScheduleResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		outingSrvSpan := h.tracer.StartSpan("CreateOuting", opentracing.ChildOf(topSpan.Context()))
+		scheduleSrvSpan := h.tracer.StartSpan("CreateSchedule", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", scheduleSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.Uuid = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.scheduleService.CreateSchedule(ctxForReq, rpcReq, callOpts...)
-		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		outingSrvSpan.Finish()
+		scheduleSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		scheduleSrvSpan.Finish()
 		return
 	})
 
