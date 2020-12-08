@@ -31,3 +31,14 @@ func (from GetScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.GetSched
 	to.Month = from.Month
 	return
 }
+
+// request entity of GET /v1/time-tables/week-numbers/{week-number}
+type GetTimeTableRequest struct {
+	WeekNumber int32 `uri:"week-number" validate:"required,int_range=1~7"`
+}
+
+func (from GetTimeTableRequest) GenerateGRPCRequest() (to *scheduleproto.GetTimeTableRequest) {
+	to = new(scheduleproto.GetTimeTableRequest)
+	to.WeekNumber = from.WeekNumber
+	return
+}
