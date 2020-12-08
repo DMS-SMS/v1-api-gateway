@@ -18,3 +18,16 @@ func (from CreateScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.Creat
 	to.Detail = from.Detail
 	return
 }
+
+// request entity of POST /v1/outings
+type GetScheduleRequest struct {
+	Year int32 `json:"year" validate:"required,int_range=0~9999"`
+	Month int32 `json:"month" validate:"required,int_range=1~12"`
+}
+
+func (from GetScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.GetScheduleRequest) {
+	to = new(scheduleproto.GetScheduleRequest)
+	to.Year = from.Year
+	to.Month = from.Month
+	return
+}
