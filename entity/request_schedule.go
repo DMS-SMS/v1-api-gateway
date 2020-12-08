@@ -19,10 +19,10 @@ func (from CreateScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.Creat
 	return
 }
 
-// request entity of POST /v1/outings
+// request entity of GET /v1/schedules/years/:year/months/:month
 type GetScheduleRequest struct {
-	Year int32 `json:"year" validate:"required,int_range=0~9999"`
-	Month int32 `json:"month" validate:"required,int_range=1~12"`
+	Year  int32 `uri:"year" validate:"required,int_range=0~9999"`
+	Month int32 `uri:"month" validate:"required,int_range=1~12"`
 }
 
 func (from GetScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.GetScheduleRequest) {
