@@ -66,7 +66,7 @@ func (_ *_default) checkIfAuthenticated(c *gin.Context) (ok bool, claims jwtutil
 
 func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok bool, code int, msg string) {
 	switch bindReq.(type) {
-	case *entity.GetScheduleRequest:
+	case *entity.GetScheduleRequest, *entity.GetTimeTableRequest:
 		if err := c.ShouldBindUri(bindReq); err != nil {
 			ok = false
 			code = respcode.FailToBindRequestToStruct
