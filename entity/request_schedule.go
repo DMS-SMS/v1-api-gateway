@@ -8,7 +8,7 @@ import (
 type CreateScheduleRequest struct {
 	StartDate int64  `json:"start_date" validate:"required,int_len=10"`
 	EndDate   int64  `json:"end_date" validate:"required,int_len=10"`
-	Detail    string `json:"detail" validate:"required,len=100"`
+	Detail    string `json:"detail" validate:"required,max=100"`
 }
 
 func (from CreateScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.CreateScheduleRequest) {
