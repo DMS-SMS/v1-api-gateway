@@ -93,12 +93,12 @@ func main() {
 	scheduleSrvCli := struct {
 		scheduleproto.ScheduleService
 	} {
-		ScheduleService: scheduleproto.NewScheduleService(topic.ScheduleServiceName, gRPCCli),
+		ScheduleService: scheduleproto.NewScheduleService("schedule", gRPCCli),
 	}
 	announcementSrvCli := struct {
 		announcementproto.AnnouncementService
 	} {
-		AnnouncementService: announcementproto.NewAnnouncementService("", gRPCCli),
+		AnnouncementService: announcementproto.NewAnnouncementService("announcement", gRPCCli),
 	}
 
 	// create http request handler
@@ -207,5 +207,6 @@ func main() {
 	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
 
-	log.Fatal(router.Run(":8080"))
+	log.Fatal(router.Run(":80"))
 }
+
