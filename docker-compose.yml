@@ -6,7 +6,7 @@ services:
     networks:
       - dms-sms-local
     ports:
-      - 8080:8080
+      - 80:80
     environment:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
