@@ -16,7 +16,7 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      labels: [APP=mysql]
+      labels: [APP=api-gateway]
 
 networks:
   dms-sms-local:
