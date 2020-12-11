@@ -22,3 +22,20 @@ func (from CreateAnnouncementRequest) GenerateGRPCRequest() (to *announcementpro
 	to.TargetGroup = from.TargetGroup
 	return
 }
+
+// request entity of GET /v1/students/uuid/:student_uuid/outings
+type GetAnnouncementsRequest struct {
+	Start int32  `form:"start"`
+	Count int32  `form:"count"`
+}
+
+func (from GetAnnouncementsRequest) GenerateGRPCRequest() (to *announcementproto.GetAnnouncementsRequest) {
+	if from.Count == 0 {
+		from.Count = 10
+	}
+
+	to = new(announcementproto.GetAnnouncementsRequest)
+	to.Start = from.Start
+	to.Count = from.Count
+	return
+}
