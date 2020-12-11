@@ -125,6 +125,8 @@ func main() {
 	if err != nil { log.Fatal(err) }
 	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil { log.Fatal(err) }
+	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
@@ -133,6 +135,8 @@ func main() {
 	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
 	scheduleLogger := logrus.New()
 	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
+	announcementLogger := logrus.New()
+	announcementLogger.Hooks.Add(logrustash.New(announcementLog, logrustash.DefaultFormatter(logrus.Fields{"service": "announcement"})))
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -206,6 +210,13 @@ func main() {
 	scheduleRouter.GET("/v1/time-tables/week-numbers/:week-number", httpHandler.GetTimeTable)
 	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
+
+	announcementRouter := router.Group("/", middleware.LogEntrySetter(announcementLogger))
+	announcementRouter.POST("/v1/announcements", httpHandler.CreateAnnouncement)
+	announcementRouter.GET("/v1/announcements/types/{type}", httpHandler.GetAnnouncements)
+	announcementRouter.GET("/v1/announcements/uuid/{announcement_uuid}", httpHandler.GetAnnouncementDetail)
+	announcementRouter.PATCH("/v1/announcements/uuid/{announcement_uuid}", httpHandler.UpdateAnnouncement)
+	announcementRouter.DELETE("/v1/announcements/uuid/{announcement_uuid}", httpHandler.DeleteAnnouncement)
 
 	log.Fatal(router.Run(":80"))
 }
