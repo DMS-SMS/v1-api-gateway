@@ -319,8 +319,7 @@ func (h *_default) GetAnnouncements(c *gin.Context) {
 				"title":             announcement.Title,
 				"date":              announcement.Date,
 				"views":             announcement.Views,
-				"club_name":         announcement.Club,
-				"teacher_name":      announcement.WriterName,
+				"writer_name":       announcement.WriterName,
 				"is_checked":        announcement.IsChecked,
 			}
 		}
