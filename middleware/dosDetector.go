@@ -49,8 +49,8 @@ func (d *dosDetector) detectDos (c *gin.Context) {
 		return
 	}
 
-	// set rejected true if total request per second is over than 10
-	if *d.limitTable[cip] >= 10 {
+	// set rejected true if total request per second is over than 50
+	if *d.limitTable[cip] >= 50 {
 		d.rejected[cip] = true
 		time.AfterFunc(time.Minute, func() {
 			d.mutex.Lock()
