@@ -217,6 +217,7 @@ func main() {
 	announcementRouter.GET("/v1/announcements/uuid/{announcement_uuid}", httpHandler.GetAnnouncementDetail)
 	announcementRouter.PATCH("/v1/announcements/uuid/{announcement_uuid}", httpHandler.UpdateAnnouncement)
 	announcementRouter.DELETE("/v1/announcements/uuid/{announcement_uuid}", httpHandler.DeleteAnnouncement)
+	announcementRouter.GET("/v1/students/uuid/{student_uuid}/announcement-check", httpHandler.CheckAnnouncement)
 
 	log.Fatal(router.Run(":80"))
 }
