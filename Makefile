@@ -40,3 +40,7 @@ filebeat_run:
 .PHONY: filebeat_deploy
 filebeat_deploy:
 	envsubst < ./filebeat-deployment.yaml | kubectl apply -f -
+
+.PHONY: stack
+stack:
+	env VERSION=${VERSION} docker stack deploy -c docker-compose.yml DSM_SMS

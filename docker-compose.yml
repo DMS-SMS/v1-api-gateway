@@ -6,18 +6,22 @@ services:
     networks:
       - dms-sms-local
     ports:
-      - 8080:8080
+      - 80:80
     environment:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels: [APP=api-gateway]
 
 networks:
   dms-sms-local:
     name: dms-sms-local
-    driver: bridge
+    driver: overlay
 
 volumes:
   log-data:

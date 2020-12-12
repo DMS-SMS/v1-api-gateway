@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"gateway/entity"
-	authproto "gateway/proto/golang/auth"
+	outingproto "gateway/proto/golang/outing"
 	agenterrors "gateway/tool/consul/agent/errors"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/gin-gonic/gin"
 	"github.com/micro/go-micro/v2/client"
@@ -21,160 +20,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	"net/http"
-	"reflect"
 	"time"
 )
 
-func (h *_default) LoginStudentAuth(c *gin.Context) {
-	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
-
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
-
-	// logic handling BadRequest
-	var receivedReq entity.LoginStudentAuthRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
-		return
-	}
-	reqBytes, _ := json.Marshal(receivedReq)
-
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	h.mutex.Lock()
-	if _, ok := h.breakers[selectedNode.Id]; !ok {
-		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
-	}
-	h.mutex.Unlock()
-
-	var rpcResp *authproto.LoginStudentAuthResponse
-	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("LoginStudentAuth", opentracing.ChildOf(topSpan.Context()))
-		ctxForReq := context.Background()
-		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
-		rpcReq := receivedReq.GenerateGRPCRequest()
-		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.LoginStudentAuth(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
-		return
-	})
-
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcErr := err.(type) {
-	case nil:
-		break
-	case *errors.Error:
-		var status, _code int
-		var msg string
-		switch rpcErr.Code {
-		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for LoginStudentAuth service, detail: %s", rpcErr.Detail)
-			status, _code = http.StatusRequestTimeout, 0
-		default:
-			msg = fmt.Sprintf("LoginStudentAuth returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
-			status, _code = http.StatusInternalServerError, 0
-		}
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("LoginStudentAuth returns unexpected type of error, err: %s", rpcErr.Error())
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcResp.Status {
-	case http.StatusOK:
-		status, _code := http.StatusOK, 0
-		msg := "succeed to login student auth"
-		jwtToken, _ := jwtutil.GenerateStringWithClaims(jwtutil.UUIDClaims{
-			UUID: rpcResp.LoggedInStudentUUID,
-			Type: "access_token",
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-			},
-		}, jwt.SigningMethodHS512)
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "student_uuid": rpcResp.LoggedInStudentUUID}
-		c.JSON(status, sendResp)
-		respBytes, _ := json.Marshal(sendResp)
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
-			log.String("access_token", jwtToken), log.String("student_uuid", rpcResp.LoggedInStudentUUID))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	}
-
-	return
-}
-
-func (h *_default) ChangeStudentPW(c *gin.Context) {
+func (h *_default) CreateOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
@@ -202,7 +51,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	}
 
 	// logic handling BadRequest
-	var receivedReq entity.ChangeStudentPWRequest
+	var receivedReq entity.CreateOutingRequest
 	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
 	} else {
 		reqBytes, _ := json.Marshal(receivedReq)
@@ -215,7 +64,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
 	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
 	consulSpan.LogFields(log.Error(err))
 	consulSpan.Finish()
@@ -224,7 +73,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	case nil:
 		break
 	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
+		msg := "available outing service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
@@ -247,19 +96,18 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	}
 	h.mutex.Unlock()
 
-	var rpcResp *authproto.ChangeStudentPWResponse
+	var rpcResp *outingproto.CreateOutingResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("ChangeStudentPW", opentracing.ChildOf(topSpan.Context()))
+		outingSrvSpan := h.tracer.StartSpan("CreateOuting", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
-		rpcReq.UUID = uuidClaims.UUID
-		rpcReq.StudentUUID = c.Param("student_uuid")
+		rpcReq.Uuid = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.ChangeStudentPW(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
+		rpcResp, rpcErr = h.outingService.CreateOuting(ctxForReq, rpcReq, callOpts...)
+		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		outingSrvSpan.Finish()
 		return
 	})
 
@@ -283,10 +131,10 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		var msg string
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for ChangeStudentPW service, detail: %s", rpcErr.Detail)
+			msg = fmt.Sprintf("request time out for CreateOuting service, detail: %s", rpcErr.Detail)
 			status, _code = http.StatusRequestTimeout, 0
 		default:
-			msg = fmt.Sprintf("ChangeStudentPW returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			msg = fmt.Sprintf("CreateOuting returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
 			status, _code = http.StatusInternalServerError, 0
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -296,7 +144,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("ChangeStudentPW returns unexpected type of error, err: %s", rpcErr.Error())
+		msg := fmt.Sprintf("CreateOuting returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
@@ -307,175 +155,29 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusCreated:
 		status, _code := http.StatusCreated, 0
-		msg := fmt.Sprintf("succeed to change auth password of %s", uuidClaims.UUID)
-		sendResp := gin.H{"status": status, "code": _code, "message": msg}
+		msg := "succeed to create new outing"
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "outing_uuid": rpcResp.OutingId}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	}
-
-	return
-}
-
-func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
-	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
-
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
-
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
-		return
-	}
-
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	h.mutex.Lock()
-	if _, ok := h.breakers[selectedNode.Id]; !ok {
-		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
-	}
-	h.mutex.Unlock()
-
-	var rpcResp *authproto.GetStudentInformWithUUIDResponse
-	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("GetStudentInformWithUUID", opentracing.ChildOf(topSpan.Context()))
-		ctxForReq := context.Background()
-		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
-		rpcReq := new(authproto.GetStudentInformWithUUIDRequest)
-		rpcReq.UUID = uuidClaims.UUID
-		rpcReq.StudentUUID = c.Param("student_uuid")
-		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.GetStudentInformWithUUID(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
-		return
-	})
-
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcErr := err.(type) {
-	case nil:
-		break
-	case *errors.Error:
-		var status, _code int
-		var msg string
-		switch rpcErr.Code {
-		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for GetStudentInformWithUUID service, detail: %s", rpcErr.Detail)
-			status, _code = http.StatusRequestTimeout, 0
-		default:
-			msg = fmt.Sprintf("GetStudentInformWithUUID returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
-			status, _code = http.StatusInternalServerError, 0
-		}
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("GetStudentInformWithUUID returns unexpected type of error, err: %s", rpcErr.Error())
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcResp.Status {
-	case http.StatusOK:
-		status, _code := http.StatusOK, 0
-		msg := fmt.Sprintf("succeed to get student inform, uuid: %s", uuidClaims.UUID)
-		sendResp := gin.H{
-			"status": status, "code": _code, "message": msg,
-			"name": rpcResp.Name, "phone_number": rpcResp.PhoneNumber, "profile_uri": rpcResp.ImageURI,
-			"grade": rpcResp.Grade, "group": rpcResp.Group, "student_number": rpcResp.StudentNumber,
-		}
-		c.JSON(status, sendResp)
-		respBytes, _ := json.Marshal(sendResp)
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
 }
 
-func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
+func (h *_default) GetStudentOutings(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
@@ -503,10 +205,9 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	}
 
 	// logic handling BadRequest
-	var receivedReq entity.GetStudentUUIDsWithInformRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && !reflect.DeepEqual(receivedReq, entity.GetStudentUUIDsWithInformRequest{}) {
+	var receivedReq entity.GetStudentOutingsRequest
+	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
 	} else {
-		if msg == "" { msg = "you must set up at least one parameter" }
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
@@ -514,11 +215,10 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
-	fmt.Println(receivedReq)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
 	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
 	consulSpan.LogFields(log.Error(err))
 	consulSpan.Finish()
@@ -527,7 +227,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	case nil:
 		break
 	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
+		msg := "available outing service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
@@ -550,20 +250,22 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	}
 	h.mutex.Unlock()
 
-	var rpcResp *authproto.GetStudentUUIDsWithInformResponse
+	var rpcResp *outingproto.GetStudentOutingsResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("GetStudentUUIDsWithInform", opentracing.ChildOf(topSpan.Context()))
+		outingSrvSpan := h.tracer.StartSpan("GetStudentOutings", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
-		rpcReq.UUID = uuidClaims.UUID
+		rpcReq.Uuid = uuidClaims.UUID
+		rpcReq.StudentId = c.Param("student_uuid")
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.GetStudentUUIDsWithInform(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
+		rpcResp, rpcErr = h.outingService.GetStudentOutings(ctxForReq, rpcReq, callOpts...)
+		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		outingSrvSpan.Finish()
 		return
 	})
+
 
 	if err == breaker.ErrBreakerOpen {
 		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
@@ -585,10 +287,10 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		var msg string
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for GetStudentUUIDsWithInform service, detail: %s", rpcErr.Detail)
+			msg = fmt.Sprintf("request time out for GetStudentOutings service, detail: %s", rpcErr.Detail)
 			status, _code = http.StatusRequestTimeout, 0
 		default:
-			msg = fmt.Sprintf("GetStudentUUIDsWithInform returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			msg = fmt.Sprintf("GetStudentOutings returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
 			status, _code = http.StatusInternalServerError, 0
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -598,7 +300,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("GetStudentUUIDsWithInform returns unexpected type of error, err: %s", rpcErr.Error())
+		msg := fmt.Sprintf("GetStudentOutings returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
@@ -609,196 +311,41 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
-		msg := "succeed to get student uuid list with inform"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "student_uuids": rpcResp.StudentUUIDs}
-		c.JSON(status, sendResp)
-		respBytes, _ := json.Marshal(sendResp)
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
-	}
-
-	return
-}
-
-func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
-	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
-
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
-
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
-		return
-	}
-
-	// logic handling BadRequest
-	var receivedReq entity.GetStudentInformsWithUUIDsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && !reflect.DeepEqual(receivedReq, entity.GetStudentUUIDsWithInformRequest{}) {
-	} else {
-		if msg == "" { msg = "you must set up at least one parameter" }
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
-		return
-	}
-	reqBytes, _ := json.Marshal(receivedReq)
-
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	h.mutex.Lock()
-	if _, ok := h.breakers[selectedNode.Id]; !ok {
-		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
-	}
-	h.mutex.Unlock()
-
-	var rpcResp *authproto.GetStudentInformsWithUUIDsResponse
-	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("GetStudentInformsWithUUIDs", opentracing.ChildOf(topSpan.Context()))
-		ctxForReq := context.Background()
-		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
-		rpcReq := receivedReq.GenerateGRPCRequest()
-		rpcReq.UUID = uuidClaims.UUID
-		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.GetStudentInformsWithUUIDs(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
-		return
-	})
-
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcErr := err.(type) {
-	case nil:
-		break
-	case *errors.Error:
-		var status, _code int
-		var msg string
-		switch rpcErr.Code {
-		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for GetStudentInformsWithUUIDs service, detail: %s", rpcErr.Detail)
-			status, _code = http.StatusRequestTimeout, 0
-		default:
-			msg = fmt.Sprintf("GetStudentInformsWithUUIDs returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
-			status, _code = http.StatusInternalServerError, 0
-		}
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("GetStudentInformsWithUUIDs returns unexpected type of error, err: %s", rpcErr.Error())
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	}
-
-	switch rpcResp.Status {
-	case http.StatusOK:
-		status, _code := http.StatusOK, 0
-		msg := "succeed to get student informs list with uuid list"
-		students := make([]map[string]interface{}, len(rpcResp.StudentInforms))
-		for index, studentInform := range rpcResp.StudentInforms {
-			students[index] = map[string]interface{}{
-				"student_uuid":   studentInform.StudentUUID,
-				"grade":          studentInform.Grade,
-				"group":          studentInform.Group,
-				"student_number": studentInform.StudentNumber,
-				"name":           studentInform.Name,
-				"phone_number":   studentInform.PhoneNumber,
-				"profile_uri":    studentInform.ImageURI,
+		msg := "succeed to get outing informs with student uuid"
+		outings := make([]map[string]interface{}, len(rpcResp.Outing))
+		for index, outing := range rpcResp.Outing {
+			outings[index] = map[string]interface{}{
+				"outing_uuid":      outing.OutingId,
+				"place":            outing.Place,
+				"reason":           outing.Reason,
+				"start_time":       outing.StartTime,
+				"end_time":         outing.EndTime,
+				"outing_situation": outing.Situation,
+				"outing_status":    outing.Status,
 			}
 		}
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "students": students}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "outings": outings}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
 }
 
-func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
+func (h *_default) GetOutingInform(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
@@ -826,7 +373,7 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	}
 
 	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
 	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
 	consulSpan.LogFields(log.Error(err))
 	consulSpan.Finish()
@@ -835,7 +382,7 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	case nil:
 		break
 	case agenterrors.AvailableNodeNotExist:
-		msg := "available auth service node is not exist in consul"
+		msg := "available outing service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
@@ -858,21 +405,22 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	}
 	h.mutex.Unlock()
 
-	var rpcResp *authproto.GetParentWithStudentUUIDResponse
+	var rpcResp *outingproto.GetOutingInformResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("GetParentWithStudentUUID", opentracing.ChildOf(topSpan.Context()))
+		outingSrvSpan := h.tracer.StartSpan("GetOutingInform", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
-		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
-		rpcReq := new(authproto.GetParentWithStudentUUIDRequest)
-		rpcReq.UUID = uuidClaims.UUID
-		rpcReq.StudentUUID = c.Param("student_uuid")
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+		rpcReq := new(outingproto.GetOutingInformRequest)
+		rpcReq.Uuid = uuidClaims.UUID
+		rpcReq.OutingId = c.Param("outing_uuid")
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.authService.GetParentWithStudentUUID(ctxForReq, rpcReq, callOpts...)
-		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
-		authSrvSpan.Finish()
+		rpcResp, rpcErr = h.outingService.GetOutingInform(ctxForReq, rpcReq, callOpts...)
+		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		outingSrvSpan.Finish()
 		return
 	})
+
 
 	if err == breaker.ErrBreakerOpen {
 		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
@@ -894,10 +442,10 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		var msg string
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for GetParentWithStudentUUID service, detail: %s", rpcErr.Detail)
+			msg = fmt.Sprintf("request time out for GetOutingInform service, detail: %s", rpcErr.Detail)
 			status, _code = http.StatusRequestTimeout, 0
 		default:
-			msg = fmt.Sprintf("GetParentWithStudentUUID returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			msg = fmt.Sprintf("GetOutingInform returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
 			status, _code = http.StatusInternalServerError, 0
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -907,7 +455,7 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("GetParentWithStudentUUID returns unexpected type of error, err: %s", rpcErr.Error())
+		msg := fmt.Sprintf("GetOutingInform returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
@@ -918,10 +466,18 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	switch rpcResp.Status {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
-		msg := "succeed to get parent inform with student uuid"
+		msg := "succeed to get outing inform with outing uuid"
 		sendResp := gin.H{
-			"status": status, "code": _code, "message": msg,
-			"parent_uuid": rpcResp.ParentUUID, "name": rpcResp.Name, "phone_number": rpcResp.PhoneNumber,
+			"status":           status,
+			"code":             _code,
+			"message":          msg,
+			"outing_uuid":      rpcResp.OutingId,
+			"place":            rpcResp.Place,
+			"reason":           rpcResp.Reason,
+			"start_time":       rpcResp.StartTime,
+			"end_time":         rpcResp.EndTime,
+			"outing_situation": rpcResp.OutingSituation,
+			"outing_status":    rpcResp.OutingStatus,
 		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
@@ -929,14 +485,691 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
-		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
-		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	}
+
+	return
+}
+
+func (h *_default) GetCardAboutOuting(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-Id")
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
+
+	inAdvanceEntry, ok := c.Get("RequestLogEntry")
+	entry, ok := inAdvanceEntry.(*logrus.Entry)
+	if !ok {
+		msg := "unable to get request log entry from middleware"
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
+		return
+	}
+
+	// logic handling Unauthorized
+	var uuidClaims jwtutil.UUIDClaims
+	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
+		uuidClaims = claims
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
+		return
+	}
+
+	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
+	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
+	consulSpan.LogFields(log.Error(err))
+	consulSpan.Finish()
+
+	switch err {
+	case nil:
+		break
+	case agenterrors.AvailableNodeNotExist:
+		msg := "available outing service node is not exist in consul"
+		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	default:
+		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
+		status, _code := http.StatusInternalServerError, 0
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	h.mutex.Lock()
+	if _, ok := h.breakers[selectedNode.Id]; !ok {
+		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
+	}
+	h.mutex.Unlock()
+
+	var rpcResp *outingproto.GetCardAboutOutingResponse
+	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+		outingSrvSpan := h.tracer.StartSpan("GetCardAboutOuting", opentracing.ChildOf(topSpan.Context()))
+		ctxForReq := context.Background()
+		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+		rpcReq := new(outingproto.GetCardAboutOutingRequest)
+		rpcReq.Uuid = uuidClaims.UUID
+		rpcReq.OutingId = c.Param("outing_uuid")
+		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		rpcResp, rpcErr = h.outingService.GetCardAboutOuting(ctxForReq, rpcReq, callOpts...)
+		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		outingSrvSpan.Finish()
+		return
+	})
+
+
+	if err == breaker.ErrBreakerOpen {
+		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		var status, _code int
+		var msg string
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for GetCardAboutOuting service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("GetCardAboutOuting returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	default:
+		status, _code := http.StatusInternalServerError, 0
+		msg := fmt.Sprintf("GetCardAboutOuting returns unexpected type of error, err: %s", rpcErr.Error())
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	switch rpcResp.Status {
+	case http.StatusOK:
+		status, _code := http.StatusOK, 0
+		msg := "succeed to get card about outing with outing uuid"
+		sendResp := gin.H{
+			"status":        status,
+			"code":          _code,
+			"message":       msg,
+			"place":         rpcResp.Place,
+			"start_time":    rpcResp.StartTime,
+			"end_time":      rpcResp.EndTime,
+			"outing_status": rpcResp.OutingStatus,
+			"name":          rpcResp.OutingStatus,
+			"grade":         rpcResp.Grade,
+			"group":         rpcResp.Group,
+			"number":        rpcResp.Number,
+			"profile_uri":   rpcResp.ProfileImageUri,
+		}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	}
+
+	return
+}
+
+func (h *_default) TakeActionInOuting(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-Id")
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
+
+	inAdvanceEntry, ok := c.Get("RequestLogEntry")
+	entry, ok := inAdvanceEntry.(*logrus.Entry)
+	if !ok {
+		msg := "unable to get request log entry from middleware"
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
+		return
+	}
+
+	// logic handling Unauthorized
+	var uuidClaims jwtutil.UUIDClaims
+	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
+		uuidClaims = claims
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
+		return
+	}
+
+	var methodName string
+	switch c.Param("action") {
+	case "start":
+		methodName = "StartGoOut"
+	case "end":
+		methodName = "FinishGoOut"
+	case "teacher-approve":
+		methodName = "ApproveOuting"
+	case "teacher-reject":
+		methodName = "RejectOuting"
+	case "certify":
+		methodName = "CertifyOuting"
+	case "parent-approve":
+		methodName = "ApproveOutingByOCode"
+	case "parent-reject":
+		methodName = "RejectOutingByOCode"
+	default:
+		msg := "that action in uri is not supported"
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "code": 0, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusNotFound, "code": 0, "message": msg}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusNotFound), log.Int("code", 0), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusNotFound).SetTag("code", 0).Finish()
+		return
+	}
+
+	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
+	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
+	consulSpan.LogFields(log.Error(err))
+	consulSpan.Finish()
+
+	switch err {
+	case nil:
+		break
+	case agenterrors.AvailableNodeNotExist:
+		msg := "available outing service node is not exist in consul"
+		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	default:
+		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
+		status, _code := http.StatusInternalServerError, 0
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	h.mutex.Lock()
+	if _, ok := h.breakers[selectedNode.Id]; !ok {
+		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
+	}
+	h.mutex.Unlock()
+
+	switch c.Param("action") {
+	case "start", "end":
+		var rpcResp *outingproto.GoOutResponse
+		err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+			outingSrvSpan := h.tracer.StartSpan(methodName, opentracing.ChildOf(topSpan.Context()))
+			ctxForReq := context.Background()
+			ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+			ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+			rpcReq := new(outingproto.GoOutRequest)
+			rpcReq.Uuid = uuidClaims.UUID
+			rpcReq.OutingId = c.Param("outing_uuid")
+			callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+			switch c.Param("action") {
+			case "start":
+				rpcResp, rpcErr = h.outingService.StartGoOut(ctxForReq, rpcReq, callOpts...)
+			case "end":
+				rpcResp, rpcErr = h.outingService.FinishGoOut(ctxForReq, rpcReq, callOpts...)
+			}
+			outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+			outingSrvSpan.Finish()
+			return
+		})
+
+		if err == breaker.ErrBreakerOpen {
+			msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcErr := err.(type) {
+		case nil:
+			break
+		case *errors.Error:
+			var status, _code int
+			var msg string
+			switch rpcErr.Code {
+			case http.StatusRequestTimeout:
+				msg = fmt.Sprintf("request time out for %s service, detail: %s", methodName, rpcErr.Detail)
+				status, _code = http.StatusRequestTimeout, 0
+			default:
+				msg = fmt.Sprintf("%s returns unexpected micro error, code: %d, detail: %s", methodName, rpcErr.Code, rpcErr.Detail)
+				status, _code = http.StatusInternalServerError, 0
+			}
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		default:
+			status, _code := http.StatusInternalServerError, 0
+			msg := fmt.Sprintf("%s returns unexpected type of error, err: %s", methodName, rpcErr.Error())
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcResp.Status {
+		case http.StatusOK:
+			status, _code := http.StatusOK, 0
+			msg := "succeed to take action to outing"
+			sendResp := gin.H{"status": status, "code": _code, "message": msg}
+			c.JSON(status, sendResp)
+			respBytes, _ := json.Marshal(sendResp)
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		default:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		}
+
+		return
+
+	case "teacher-approve", "teacher-reject", "certify":
+		var rpcResp *outingproto.ConfirmOutingResponse
+		err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+			outingSrvSpan := h.tracer.StartSpan(methodName, opentracing.ChildOf(topSpan.Context()))
+			ctxForReq := context.Background()
+			ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+			ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+			rpcReq := new(outingproto.ConfirmOutingRequest)
+			rpcReq.Uuid = uuidClaims.UUID
+			rpcReq.OutingId = c.Param("outing_uuid")
+			callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+			switch c.Param("action") {
+			case "teacher-approve":
+				rpcResp, rpcErr = h.outingService.ApproveOuting(ctxForReq, rpcReq, callOpts...)
+			case "teacher-reject":
+				rpcResp, rpcErr = h.outingService.RejectOuting(ctxForReq, rpcReq, callOpts...)
+			case "certify":
+				rpcResp, rpcErr = h.outingService.CertifyOuting(ctxForReq, rpcReq, callOpts...)
+			}
+			outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+			outingSrvSpan.Finish()
+			return
+		})
+
+		if err == breaker.ErrBreakerOpen {
+			msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcErr := err.(type) {
+		case nil:
+			break
+		case *errors.Error:
+			var status, _code int
+			var msg string
+			switch rpcErr.Code {
+			case http.StatusRequestTimeout:
+				msg = fmt.Sprintf("request time out for %s service, detail: %s", methodName, rpcErr.Detail)
+				status, _code = http.StatusRequestTimeout, 0
+			default:
+				msg = fmt.Sprintf("%s returns unexpected micro error, code: %d, detail: %s", methodName, rpcErr.Code, rpcErr.Detail)
+				status, _code = http.StatusInternalServerError, 0
+			}
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		default:
+			status, _code := http.StatusInternalServerError, 0
+			msg := fmt.Sprintf("%s returns unexpected type of error, err: %s", methodName, rpcErr.Error())
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcResp.Status {
+		case http.StatusOK:
+			status, _code := http.StatusOK, 0
+			msg := "succeed to take action to outing"
+			sendResp := gin.H{"status": status, "code": _code, "message": msg}
+			c.JSON(status, sendResp)
+			respBytes, _ := json.Marshal(sendResp)
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		default:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		}
+
+		return
+
+	case "parent-approve", "parent-reject":
+		var rpcResp *outingproto.ConfirmOutingByOCodeResponse
+		err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+			outingSrvSpan := h.tracer.StartSpan(methodName, opentracing.ChildOf(topSpan.Context()))
+			ctxForReq := context.Background()
+			ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+			ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+			rpcReq := new(outingproto.ConfirmOutingByOCodeRequest)
+			rpcReq.ConfirmCode = c.Request.URL.Query().Get("code")
+			callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+			switch c.Param("action") {
+			case "parent-approve":
+				rpcResp, rpcErr = h.outingService.ApproveOutingByOCode(ctxForReq, rpcReq, callOpts...)
+			case "parent-reject":
+				rpcResp, rpcErr = h.outingService.RejectOutingByOCode(ctxForReq, rpcReq, callOpts...)
+			}
+			outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+			outingSrvSpan.Finish()
+			return
+		})
+
+		if err == breaker.ErrBreakerOpen {
+			msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcErr := err.(type) {
+		case nil:
+			break
+		case *errors.Error:
+			var status, _code int
+			var msg string
+			switch rpcErr.Code {
+			case http.StatusRequestTimeout:
+				msg = fmt.Sprintf("request time out for %s service, detail: %s", methodName, rpcErr.Detail)
+				status, _code = http.StatusRequestTimeout, 0
+			default:
+				msg = fmt.Sprintf("%s returns unexpected micro error, code: %d, detail: %s", methodName, rpcErr.Code, rpcErr.Detail)
+				status, _code = http.StatusInternalServerError, 0
+			}
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		default:
+			status, _code := http.StatusInternalServerError, 0
+			msg := fmt.Sprintf("%s returns unexpected type of error, err: %s", methodName, rpcErr.Error())
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+			return
+		}
+
+		switch rpcResp.Status {
+		case http.StatusOK:
+			status, _code := http.StatusOK, 0
+			msg := "succeed to take action to outing"
+			sendResp := gin.H{"status": status, "code": _code, "message": msg}
+			c.JSON(status, sendResp)
+			respBytes, _ := json.Marshal(sendResp)
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
+			topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+			topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Error()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		default:
+			c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+			entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg}).Info()
+			topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+			topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+		}
+
+		return
+	}
+}
+
+func (h *_default) GetOutingWithFilter(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-Id")
+	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
+
+	inAdvanceEntry, ok := c.Get("RequestLogEntry")
+	entry, ok := inAdvanceEntry.(*logrus.Entry)
+	if !ok {
+		msg := "unable to get request log entry from middleware"
+		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
+		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
+		return
+	}
+
+	// logic handling Unauthorized
+	var uuidClaims jwtutil.UUIDClaims
+	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
+		uuidClaims = claims
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
+		return
+	}
+
+	// logic handling BadRequest
+	var receivedReq entity.GetOutingWithFilterRequest
+	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
+	} else {
+		reqBytes, _ := json.Marshal(receivedReq)
+		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
+		return
+	}
+	reqBytes, _ := json.Marshal(receivedReq)
+
+	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
+	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
+	consulSpan.LogFields(log.Error(err))
+	consulSpan.Finish()
+
+	switch err {
+	case nil:
+		break
+	case agenterrors.AvailableNodeNotExist:
+		msg := "available outing service node is not exist in consul"
+		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	default:
+		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
+		status, _code := http.StatusInternalServerError, 0
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	h.mutex.Lock()
+	if _, ok := h.breakers[selectedNode.Id]; !ok {
+		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
+	}
+	h.mutex.Unlock()
+
+	var rpcResp *outingproto.OutingResponse
+	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+		outingSrvSpan := h.tracer.StartSpan("GetOutingWithFilter", opentracing.ChildOf(topSpan.Context()))
+		ctxForReq := context.Background()
+		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
+		rpcReq := receivedReq.GenerateGRPCRequest()
+		rpcReq.Uuid = uuidClaims.UUID
+		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		rpcResp, rpcErr = h.outingService.GetOutingWithFilter(ctxForReq, rpcReq, callOpts...)
+		outingSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		outingSrvSpan.Finish()
+		return
+	})
+
+	if err == breaker.ErrBreakerOpen {
+		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
+		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		var status, _code int
+		var msg string
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for GetOutingWithFilter service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("GetOutingWithFilter returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	default:
+		status, _code := http.StatusInternalServerError, 0
+		msg := fmt.Sprintf("GetOutingWithFilter returns unexpected type of error, err: %s", rpcErr.Error())
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+		return
+	}
+
+	switch rpcResp.Status {
+	case http.StatusOK:
+		status, _code := http.StatusOK, 0
+		msg := "succeed to get outing informs with student uuid"
+		outings := make([]map[string]interface{}, len(rpcResp.Outing))
+		for index, outing := range rpcResp.Outing {
+			outings[index] = map[string]interface{}{
+				"outing_uuid":      outing.OutingId,
+				"place":            outing.Place,
+				"reason":           outing.Reason,
+				"start_time":       outing.StartTime,
+				"end_time":         outing.EndTime,
+				"outing_situation": outing.Situation,
+				"outing_status":    outing.Status,
+				"name":             outing.Name,
+				"grade":            outing.Grade,
+				"group":            outing.Group,
+				"number":           outing.Number,
+				"is_late":          outing.IsLate,
+			}
+		}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "outings": outings}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
+		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
+		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Error()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
+		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Info()
+		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Msg))
 		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 

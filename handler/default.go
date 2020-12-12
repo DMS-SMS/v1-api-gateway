@@ -1,8 +1,11 @@
 package handler
 
 import (
+	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	outingproto "gateway/proto/golang/outing"
+	scheduleproto "gateway/proto/golang/schedule"
 	"gateway/tool/consul"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
@@ -24,6 +27,17 @@ type _default struct {
 		clubproto.ClubAdminService
 		clubproto.ClubStudentService
 		clubproto.ClubLeaderService
+	}
+	outingService interface {
+		outingproto.OutingStudentService
+		outingproto.OutingTeacherService
+		outingproto.OutingParentsService
+	}
+	scheduleService interface {
+		scheduleproto.ScheduleService
+	}
+	announcementService interface {
+		announcementproto.AnnouncementService
 	}
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -79,6 +93,32 @@ func ClubService(clubService struct {
 }) FieldSetter {
 	return func(h *_default) {
 		h.clubService = clubService
+	}
+}
+
+func OutingService(outingService interface {
+	outingproto.OutingStudentService
+	outingproto.OutingTeacherService
+	outingproto.OutingParentsService
+}) FieldSetter {
+	return func(h *_default) {
+		h.outingService = outingService
+	}
+}
+
+func AnnouncementService(announcementService interface {
+	announcementproto.AnnouncementService
+}) FieldSetter {
+	return func(h *_default) {
+		h.announcementService = announcementService
+	}
+}
+
+func ScheduleService(scheduleService interface {
+	scheduleproto.ScheduleService
+}) FieldSetter {
+	return func(h *_default) {
+		h.scheduleService = scheduleService
 	}
 }
 

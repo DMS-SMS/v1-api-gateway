@@ -4,8 +4,11 @@ import (
 	"gateway/entity/validator"
 	"gateway/handler"
 	"gateway/middleware"
+	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	outingproto "gateway/proto/golang/outing"
+	scheduleproto "gateway/proto/golang/schedule"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
 	"github.com/bshuster-repo/logrus-logstash-hook"
@@ -78,6 +81,25 @@ func main() {
 		ClubStudentService: clubproto.NewClubStudentService(topic.ClubServiceName, gRPCCli),
 		ClubLeaderService:  clubproto.NewClubLeaderService(topic.ClubServiceName, gRPCCli),
 	}
+	outingSrvCli := struct {
+		outingproto.OutingStudentService
+		outingproto.OutingTeacherService
+		outingproto.OutingParentsService
+	} {
+		OutingStudentService: outingproto.NewOutingStudentService("", gRPCCli),
+		OutingTeacherService: outingproto.NewOutingTeacherService("", gRPCCli),
+		OutingParentsService: outingproto.NewOutingParentsService("", gRPCCli),
+	}
+	scheduleSrvCli := struct {
+		scheduleproto.ScheduleService
+	} {
+		ScheduleService: scheduleproto.NewScheduleService("schedule", gRPCCli),
+	}
+	announcementSrvCli := struct {
+		announcementproto.AnnouncementService
+	} {
+		AnnouncementService: announcementproto.NewAnnouncementService("announcement", gRPCCli),
+	}
 
 	// create http request handler
 	httpHandler := handler.Default(
@@ -86,6 +108,9 @@ func main() {
 		handler.Tracer(apiTracer),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
+		handler.OutingService(outingSrvCli),
+		handler.ScheduleService(scheduleSrvCli),
+		handler.AnnouncementService(announcementSrvCli),
 	)
 
 	// create log file & logger
@@ -96,13 +121,30 @@ func main() {
 	if err != nil { log.Fatal(err) }
 	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil { log.Fatal(err) }
+	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
+	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
+	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
 	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
+	outingLogger := logrus.New()
+	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
+	scheduleLogger := logrus.New()
+	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
+	announcementLogger := logrus.New()
+	announcementLogger.Hooks.Add(logrustash.New(announcementLog, logrustash.DefaultFormatter(logrus.Fields{"service": "announcement"})))
 
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	router.Use(cors.Default(), middleware.DosDetector(), middleware.Correlator())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization")
+	corsHandler := cors.New(corsConfig)
+	router.Use(corsHandler, middleware.DosDetector(), middleware.Correlator())
 
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
@@ -116,6 +158,7 @@ func main() {
 	authRouter.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
 	authRouter.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
 	authRouter.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
+	authRouter.GET("/v1/students/uuid/:student_uuid/parent", httpHandler.GetParentWithStudentUUID)
 	// auth service api for teacher
 	authRouter.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
 	authRouter.PUT("/v1/teachers/uuid/:teacher_uuid/password", httpHandler.ChangeTeacherPW)
@@ -126,7 +169,6 @@ func main() {
 	authRouter.PUT("/v1/parents/uuid/:parent_uuid/password", httpHandler.ChangeParentPW)
 	authRouter.GET("/v1/parents/uuid/:parent_uuid", httpHandler.GetParentInformWithUUID)
 	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
-
 
 	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
@@ -154,5 +196,29 @@ func main() {
 	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
 
-	log.Fatal(router.Run(":8080"))
+	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
+	outingRouter.POST("/v1/outings", httpHandler.CreateOuting)
+	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", httpHandler.GetStudentOutings)
+	outingRouter.GET("/v1/outings/uuid/:outing_uuid", httpHandler.GetOutingInform)
+	outingRouter.GET("/v1/outings/uuid/:outing_uuid/card", httpHandler.GetCardAboutOuting)
+	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", httpHandler.TakeActionInOuting)
+	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
+
+	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
+	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
+	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", httpHandler.GetSchedule)
+	scheduleRouter.GET("/v1/time-tables/week-numbers/:week-number", httpHandler.GetTimeTable)
+	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
+	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
+
+	announcementRouter := router.Group("/", middleware.LogEntrySetter(announcementLogger))
+	announcementRouter.POST("/v1/announcements", httpHandler.CreateAnnouncement)
+	announcementRouter.GET("/v1/announcements/types/:type", httpHandler.GetAnnouncements)
+	announcementRouter.GET("/v1/announcements/uuid/:announcement_uuid", httpHandler.GetAnnouncementDetail)
+	announcementRouter.PATCH("/v1/announcements/uuid/:announcement_uuid", httpHandler.UpdateAnnouncement)
+	announcementRouter.DELETE("/v1/announcements/uuid/:announcement_uuid", httpHandler.DeleteAnnouncement)
+	announcementRouter.GET("/v1/students/uuid/:student_uuid/announcement-check", httpHandler.CheckAnnouncement)
+
+	log.Fatal(router.Run(":80"))
 }
+
