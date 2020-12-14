@@ -207,7 +207,7 @@ func main() {
 	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
 	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
 	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", httpHandler.GetSchedule)
-	scheduleRouter.GET("/v1/time-tables/week-numbers/:week-number", httpHandler.GetTimeTable)
+	scheduleRouter.GET("/v1/time-tables/years/:year/months/:month/days/:day", httpHandler.GetTimeTable)
 	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
 

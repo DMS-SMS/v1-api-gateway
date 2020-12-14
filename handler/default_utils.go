@@ -73,6 +73,14 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 			msg = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
 			return
 		}
+	case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest,
+		 *entity.GetStudentOutingsRequest, *entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest:
+		if err := c.ShouldBindQuery(bindReq); err != nil {
+			ok = false
+			code = respcode.FailToBindRequestToStruct
+			msg = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
+			return
+		}
 	default:
 		switch c.ContentType() {
 		case "multipart/form-data":
@@ -93,7 +101,7 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 			if err := c.ShouldBindWith(bindReq, binding.Form); err != nil {
 				ok = false
 				code = respcode.FailToBindRequestToStruct
-				msg = fmt.Sprintf("failed to bind json request into golang struct, err: %v", err)
+				msg = fmt.Sprintf("failed to bind request into golang struct, err: %v", err)
 				return
 			}
 			break
