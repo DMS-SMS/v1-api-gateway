@@ -32,14 +32,18 @@ func (from GetScheduleRequest) GenerateGRPCRequest() (to *scheduleproto.GetSched
 	return
 }
 
-// request entity of GET /v1/time-tables/week-numbers/{week-number}
+// request entity of GET /v1/time-tables/years/:year/months/:month/days/:day
 type GetTimeTableRequest struct {
-	WeekNumber int32 `uri:"week-number" validate:"required,int_range=1~7"`
+	Year  int32 `uri:"year" validate:"required,int_range=0~9999"`
+	Month int32 `uri:"month" validate:"required,int_range=1~12"`
+	Day   int32 `uri:"day" validate:"required,int_range=1~31"`
 }
 
 func (from GetTimeTableRequest) GenerateGRPCRequest() (to *scheduleproto.GetTimeTableRequest) {
 	to = new(scheduleproto.GetTimeTableRequest)
-	to.WeekNumber = from.WeekNumber
+	to.Year = from.Year
+	to.Month = from.Month
+	to.Day = from.Day
 	return
 }
 
