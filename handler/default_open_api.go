@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -57,7 +58,7 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	openApiSpan := h.tracer.StartSpan("GetPlaceWithNaverOpenAPI", opentracing.ChildOf(topSpan.Context()))
-	openApiUri := fmt.Sprintf("%s?start=%d&display=%d&sort=%s&query=%s", NaverOpenApiURI, 1, 5, "comment", receivedReq.Keyword)
+	openApiUri := fmt.Sprintf("%s?start=%d&display=%d&sort=%s&query=%s", NaverOpenApiURI, 1, 5, "comment", url.QueryEscape(receivedReq.Keyword))
 	req, _ := http.NewRequest("GET", openApiUri, nil)
 	req.Header.Set("X-Naver-Client-Id", naverClientID)
 	req.Header.Set("X-Naver-Client-Secret", naverClientSecret)
@@ -97,7 +98,7 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	}
 
 	decodedResp.ErrorMessage = "succeed to get place list from naver open api"
-	sendResp := gin.H{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "msg": decodedResp.ErrorMessage, "item": decodedResp.Items,
+	sendResp := gin.H{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": decodedResp.ErrorMessage, "item": decodedResp.Items,
 		"lastBuildDate": decodedResp.LastBuildDate, "total": decodedResp.Total, "start": decodedResp.Start, "display": decodedResp.Display}
 	c.JSON(resp.StatusCode, sendResp)
 	respBytes, _ := json.Marshal(sendResp)
