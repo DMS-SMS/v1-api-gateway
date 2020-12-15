@@ -16,3 +16,5 @@ func init() {
 		log.Fatal("please set NAVER_CLIENT_SECRET in environment variable")
 	}
 }
+
+var limitTableForNaver = map[string]bool{}
