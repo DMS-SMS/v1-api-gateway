@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const (
@@ -41,6 +42,27 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
 		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
+		return
+	}
+
+	var limited bool
+	h.mutex.Lock()
+	if limitTableForNaver[uuidClaims.UUID] {
+		limited = true
+	} else {
+		limitTableForNaver[uuidClaims.UUID] = true
+		time.AfterFunc(time.Second * 5, func() {
+			limitTableForNaver[uuidClaims.UUID] = false
+		})
+	}
+	h.mutex.Unlock()
+
+	if limited {
+		msg := "you can use the API only once every 5 seconds, please wait"
+		c.JSON(http.StatusLocked, gin.H{"status": http.StatusLocked, "code": 0, "message": msg})
+		entry.WithFields(logrus.Fields{"status": http.StatusLocked, "code": 0, "message": msg}).Info()
+		topSpan.LogFields(log.Int("status", http.StatusLocked), log.Int("code", 0), log.String("message", msg))
+		topSpan.SetTag("status", http.StatusLocked).SetTag("code", 0).Finish()
 		return
 	}
 
