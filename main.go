@@ -127,6 +127,9 @@ func main() {
 	if err != nil { log.Fatal(err) }
 	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil { log.Fatal(err) }
+	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil { log.Fatal(err) }
+
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
@@ -137,6 +140,8 @@ func main() {
 	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
 	announcementLogger := logrus.New()
 	announcementLogger.Hooks.Add(logrustash.New(announcementLog, logrustash.DefaultFormatter(logrus.Fields{"service": "announcement"})))
+	openApiLogger := logrus.New()
+	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -218,6 +223,9 @@ func main() {
 	announcementRouter.PATCH("/v1/announcements/uuid/:announcement_uuid", httpHandler.UpdateAnnouncement)
 	announcementRouter.DELETE("/v1/announcements/uuid/:announcement_uuid", httpHandler.DeleteAnnouncement)
 	announcementRouter.GET("/v1/students/uuid/:student_uuid/announcement-check", httpHandler.CheckAnnouncement)
+
+	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
+	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
 
 	log.Fatal(router.Run(":80"))
 }

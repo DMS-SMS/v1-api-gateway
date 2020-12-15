@@ -12,6 +12,7 @@ import (
 	"github.com/micro/go-micro/v2/client"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -47,6 +48,7 @@ type _default struct {
 	mutex           sync.Mutex
 	BreakerCfg      BreakerConfig
 	DefaultCallOpts []client.CallOption
+	client          *http.Client
 }
 
 type BreakerConfig struct {
@@ -69,6 +71,7 @@ func Default(setters ...FieldSetter) (h *_default) {
 	h.DefaultCallOpts = []client.CallOption{client.WithDialTimeout(time.Second * 2), client.WithRequestTimeout(time.Second * 3)}
 	h.mutex = sync.Mutex{}
 	h.breakers = map[string]*breaker.Breaker{}
+	h.client = &http.Client{}
 
 	return
 }
