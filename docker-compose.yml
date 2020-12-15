@@ -11,6 +11,8 @@ services:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
