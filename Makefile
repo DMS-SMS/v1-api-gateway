@@ -46,5 +46,5 @@ stack:
 	env VERSION=${VERSION} docker stack deploy -c docker-compose.yml DSM_SMS
 
 .PHONY: filebeat_stack
-stack:
+filebeat_stack:
 	docker stack deploy -c filebeat-docker-compose.yml DSM_SMS
