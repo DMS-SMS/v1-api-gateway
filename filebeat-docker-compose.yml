@@ -8,6 +8,10 @@ services:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
     networks:
       - dms-sms-local
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels: [APP=filebeat]
 
 networks:
   dms-sms-local:
