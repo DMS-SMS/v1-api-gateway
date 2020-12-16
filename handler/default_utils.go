@@ -74,7 +74,8 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 			return
 		}
 	case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest,
-		 *entity.GetStudentOutingsRequest, *entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest:
+		 *entity.GetStudentOutingsRequest, *entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest,
+		 *entity.GetPlaceWithNaverOpenAPIRequest:
 		if err := c.ShouldBindQuery(bindReq); err != nil {
 			ok = false
 			code = respcode.FailToBindRequestToStruct
