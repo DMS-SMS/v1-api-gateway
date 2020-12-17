@@ -155,7 +155,8 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "student_uuid": rpcResp.LoggedInStudentUUID}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "login_uuid": rpcResp.LoggedInStudentUUID,
+			"response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
 			log.String("access_token", jwtToken), log.String("student_uuid", rpcResp.LoggedInStudentUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
