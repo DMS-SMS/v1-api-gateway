@@ -43,6 +43,7 @@ func (h *_default) GetClubsSortByUpdateTime(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -217,6 +218,7 @@ func (h *_default) GetRecruitmentsSortByCreateTime(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -398,6 +400,7 @@ func (h *_default) GetClubInformWithUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -554,6 +557,7 @@ func (h *_default) GetClubInformsWithUUIDs(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -728,6 +732,7 @@ func (h *_default) GetRecruitmentInformWithUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -896,6 +901,7 @@ func (h *_default) GetRecruitmentUUIDWithClubUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1038,6 +1044,7 @@ func (h *_default) GetRecruitmentUUIDsWithClubUUIDs(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1192,6 +1199,7 @@ func (h *_default) GetAllClubFields(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1333,6 +1341,7 @@ func (h *_default) GetTotalCountOfClubs(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1474,6 +1483,7 @@ func (h *_default) GetTotalCountOfCurrentRecruitments(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1615,6 +1625,7 @@ func (h *_default) GetClubUUIDWithLeaderUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
