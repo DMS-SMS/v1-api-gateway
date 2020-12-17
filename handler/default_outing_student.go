@@ -42,6 +42,7 @@ func (h *_default) CreateOuting(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -196,6 +197,7 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -364,6 +366,7 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -518,6 +521,7 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -674,6 +678,7 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -1024,6 +1029,7 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
