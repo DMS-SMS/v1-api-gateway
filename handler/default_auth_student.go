@@ -193,6 +193,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -348,6 +349,7 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -494,6 +496,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -650,6 +653,7 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -817,6 +821,7 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
