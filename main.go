@@ -208,6 +208,7 @@ func main() {
 	outingRouter.GET("/v1/outings/uuid/:outing_uuid/card", httpHandler.GetCardAboutOuting)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", httpHandler.TakeActionInOuting)
 	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
+	outingRouter.GET("/v1/outings/code/:OCode", httpHandler.GetOutingByOCode)
 
 	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
 	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
@@ -223,6 +224,8 @@ func main() {
 	announcementRouter.PATCH("/v1/announcements/uuid/:announcement_uuid", httpHandler.UpdateAnnouncement)
 	announcementRouter.DELETE("/v1/announcements/uuid/:announcement_uuid", httpHandler.DeleteAnnouncement)
 	announcementRouter.GET("/v1/students/uuid/:student_uuid/announcement-check", httpHandler.CheckAnnouncement)
+	announcementRouter.GET("/v1/announcements/types/:type/query/:search_query", httpHandler.GetAnnouncements)
+	announcementRouter.GET("/v1/announcements/writer-uuid/:writer_uuid", httpHandler.GetMyAnnouncements)
 
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
