@@ -44,8 +44,8 @@ func (from GetAnnouncementsRequest) GenerateGRPCRequest() (to *announcementproto
 type UpdateAnnouncementRequest struct {
 	Title       string `json:"title" validate:"max=50"`
 	Content     string `json:"content" validate:"max=1000"`
-	TargetGrade int32  `json:"target_grade" validate:"int_range=1~3"`
-	TargetGroup int32  `json:"target_group" validate:"int_range=1~4"`
+	TargetGrade int32  `json:"target_grade" validate:"int_range=0~123"`
+	TargetGroup int32  `json:"target_group" validate:"int_range=0~1234"`
 }
 
 func (from UpdateAnnouncementRequest) GenerateGRPCRequest() (to *announcementproto.UpdateAnnouncementRequest) {
