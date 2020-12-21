@@ -224,7 +224,7 @@ func main() {
 	announcementRouter.PATCH("/v1/announcements/uuid/:announcement_uuid", httpHandler.UpdateAnnouncement)
 	announcementRouter.DELETE("/v1/announcements/uuid/:announcement_uuid", httpHandler.DeleteAnnouncement)
 	announcementRouter.GET("/v1/students/uuid/:student_uuid/announcement-check", httpHandler.CheckAnnouncement)
-	announcementRouter.GET("/v1/announcements/types/:type/query/:search_query", httpHandler.GetAnnouncements)
+	announcementRouter.GET("/v1/announcements/types/:type/query/:search_query", httpHandler.SearchAnnouncements)
 	announcementRouter.GET("/v1/announcements/writer-uuid/:writer_uuid", httpHandler.GetMyAnnouncements)
 
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
