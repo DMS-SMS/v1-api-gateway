@@ -23,7 +23,7 @@ func (from CreateAnnouncementRequest) GenerateGRPCRequest() (to *announcementpro
 	return
 }
 
-// request entity of GET /v1/announcements/types/{type}/query/{query}
+// request entity of GET /v1/announcements/types/{type}
 type GetAnnouncementsRequest struct {
 	Start int32  `form:"start"`
 	Count int32  `form:"count"`
@@ -57,7 +57,7 @@ func (from UpdateAnnouncementRequest) GenerateGRPCRequest() (to *announcementpro
 	return
 }
 
-// request entity of GET /v1/announcements/uuid/{announcement_uuid}
+// request entity of GET /v1/announcements/types/{type}/query/{query}
 type SearchAnnouncementsRequest struct {
 	Start int32  `form:"start"`
 	Count int32  `form:"count"`
@@ -69,6 +69,23 @@ func (from SearchAnnouncementsRequest) GenerateGRPCRequest() (to *announcementpr
 	}
 
 	to = new(announcementproto.SearchAnnouncementsRequest)
+	to.Start = from.Start
+	to.Count = from.Count
+	return
+}
+
+// request entity of GET /v1/announcements/writer-uuid/{writer_uuid}
+type GetMyAnnouncementsRequest struct {
+	Start int32  `form:"start"`
+	Count int32  `form:"count"`
+}
+
+func (from GetMyAnnouncementsRequest) GenerateGRPCRequest() (to *announcementproto.GetMyAnnouncementsRequest) {
+	if from.Count == 0 {
+		from.Count = 10
+	}
+
+	to = new(announcementproto.GetMyAnnouncementsRequest)
 	to.Start = from.Start
 	to.Count = from.Count
 	return
