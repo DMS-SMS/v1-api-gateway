@@ -1,6 +1,6 @@
 version: '3.5'
 services:
-  api-gateway:
+  api-gateway-81:
     image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
     container_name: api-gateway
     networks:
