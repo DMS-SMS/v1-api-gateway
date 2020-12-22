@@ -149,7 +149,7 @@ func main() {
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization")
 	corsHandler := cors.New(corsConfig)
-	router.Use(corsHandler, middleware.DosDetector(), middleware.Correlator())
+	router.Use(middleware.SecurityFilter(), corsHandler, middleware.DosDetector(), middleware.Correlator())
 
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
@@ -231,6 +231,6 @@ func main() {
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
 
-	log.Fatal(router.Run(":80"))
+	log.Fatal(router.Run(":81"))
 }
 
