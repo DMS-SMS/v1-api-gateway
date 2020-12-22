@@ -1,7 +1,7 @@
 
 .PHONY: build
-build: proto
-	GOOS=linux GOARCH=amd64 go build -o api-gateway *.go
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api-gateway *.go
 
 .PHONY: image
 image:
