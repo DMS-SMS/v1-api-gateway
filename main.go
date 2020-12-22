@@ -174,6 +174,7 @@ func main() {
 	authRouter.PUT("/v1/parents/uuid/:parent_uuid/password", httpHandler.ChangeParentPW)
 	authRouter.GET("/v1/parents/uuid/:parent_uuid", httpHandler.GetParentInformWithUUID)
 	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
+	authRouter.GET("/v1/parents/uuid/:parent_uuid/children", httpHandler.GetChildrenInformsWithUUID)
 
 	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
