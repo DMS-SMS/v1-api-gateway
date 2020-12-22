@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mervick/aes-everywhere/go/aes256"
+	"log"
 	"net/http"
+	"os"
 	"regexp"
 )
 
@@ -13,6 +16,25 @@ type securityFilter struct {
 	filteredSecurity  map[string]bool
 	onceUsedSecurity  map[string]bool
 	basePlainTemplate *regexp.Regexp
+}
+
+func SecurityFilter() gin.HandlerFunc {
+	basePlain := os.Getenv("SECURITY_BASE_PLAIN")
+	if basePlain == "" {
+		log.Fatal("please set SECURITY_BASE_PLAIN in environment variable")
+	}
+	passPhrase := os.Getenv("SECURITY_PASS_PHRASE")
+	if passPhrase == "" {
+		log.Fatal("please set SECURITY_PASS_PHRASE in environment variable")
+	}
+
+	return (&securityFilter{
+		basePlain:         basePlain,
+		passPhrase:        passPhrase,
+		filteredSecurity:  map[string]bool{},
+		onceUsedSecurity:  map[string]bool{},
+		basePlainTemplate: regexp.MustCompile(fmt.Sprintf("^%s:\\d{10}", basePlain)),
+	}).filterSecurity
 }
 
 func (s *securityFilter) filterSecurity(c *gin.Context) {
