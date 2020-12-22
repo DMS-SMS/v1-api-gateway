@@ -468,8 +468,8 @@ func (h *_default) GetAnnouncementDetail(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get announcement detail inform with uuid"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "date": rpcResp.Date,
-			"title": rpcResp.Title, "content": rpcResp.Content, "writer_name": rpcResp.WriterName,
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "date": rpcResp.Date, "title": rpcResp.Title,
+			"content": rpcResp.Content, "writer_name": rpcResp.WriterName, "target_grade": rpcResp.TargetGrade, "target_group": rpcResp.TargetGroup,
 			"next_title": rpcResp.NextTitle, "next_announcement_uuid": rpcResp.NextAnnouncementId,
 			"previous_title": rpcResp.PreviousTitle, "previous_announcement_uuid": rpcResp.PreviousAnnouncementId}
 		c.JSON(status, sendResp)
