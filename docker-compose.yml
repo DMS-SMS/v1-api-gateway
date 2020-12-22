@@ -13,6 +13,8 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
       - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - SECURITY_BASE_PLAIN=${SECURITY_BASE_PLAIN}
+      - SECURITY_PASS_PHRASE=${SECURITY_PASS_PHRASE}
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
