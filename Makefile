@@ -1,7 +1,7 @@
 
 .PHONY: build
-build: proto
-	GOOS=linux GOARCH=amd64 go build -o api-gateway *.go
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api-gateway *.go
 
 .PHONY: image
 image:
@@ -44,3 +44,7 @@ filebeat_deploy:
 .PHONY: stack
 stack:
 	env VERSION=${VERSION} docker stack deploy -c docker-compose.yml DSM_SMS
+
+.PHONY: filebeat_stack
+filebeat_stack:
+	docker stack deploy -c filebeat-docker-compose.yml DSM_SMS

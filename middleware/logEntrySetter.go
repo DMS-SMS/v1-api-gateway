@@ -26,6 +26,7 @@ func (l *logEntrySetter) setLogEntry(c *gin.Context) {
 		"client_ip":    c.ClientIP(),
 		"X-Request-Id": c.GetHeader("X-Request-Id"),
 		"header":       string(headerBytes),
+		"full_uri":     c.FullPath(),
 	})
 	c.Set("RequestLogEntry", entry)
 }

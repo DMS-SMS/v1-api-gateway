@@ -1,5 +1,12 @@
 version: '3.5'
 services:
+#  chown-log-file:
+#    container_name: chown-log-file
+#    image: alpine:latest
+#    command: bash -c "chmod ugo+rwx /usr/share/filebeat/log/dms-sms"
+#    volumes:
+#      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+
   filebeat:
     container_name: filebeat
     image: elastic/filebeat:7.9.3
@@ -8,6 +15,12 @@ services:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
     networks:
       - dms-sms-local
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels: [APP=filebeat]
+#    depends_on:
+#      - chown-log-file
 
 networks:
   dms-sms-local:

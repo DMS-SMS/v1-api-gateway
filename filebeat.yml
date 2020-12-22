@@ -17,10 +17,10 @@ filebeat.inputs:
 #    scan_frequency: 3s
 
 output.logstash:
-  hosts: ['logstash:5044']
+  hosts: ['DSM_SMS_logstash:5044']
 
 setup.kibana:
-  host: ['kibana:5601']
+  host: ['DSM_SMS_kibana:5601']
 
 filebeat.shutdown_timeout: 10s
 name: "dms-sms"

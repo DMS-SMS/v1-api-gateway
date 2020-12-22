@@ -1,18 +1,20 @@
 version: '3.5'
 services:
-  api-gateway:
+  api-gateway-81:
     image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
     container_name: api-gateway
     networks:
       - dms-sms-local
     ports:
-      - 80:80
+      - 81:81
     environment:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
       - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - SECURITY_BASE_PLAIN=${SECURITY_BASE_PLAIN}
+      - SECURITY_PASS_PHRASE=${SECURITY_PASS_PHRASE}
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:

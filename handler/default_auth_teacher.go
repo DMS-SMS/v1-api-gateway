@@ -155,7 +155,8 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "login_uuid": rpcResp.LoggedInTeacherUUID,
+			"response": string(respBytes), "request": string(reqBytes)}).Info()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg),
 			log.String("access_token", jwtToken), log.String("teacher_uuid", rpcResp.LoggedInTeacherUUID))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
@@ -193,6 +194,7 @@ func (h *_default) ChangeTeacherPW(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -348,6 +350,7 @@ func (h *_default) GetTeacherInformWithUUID(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
@@ -494,6 +497,7 @@ func (h *_default) GetTeacherUUIDsWithInform(c *gin.Context) {
 	var uuidClaims jwtutil.UUIDClaims
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
