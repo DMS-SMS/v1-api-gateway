@@ -46,24 +46,28 @@ func (s *securityFilter) filterSecurity(c *gin.Context) {
 		Message: "please send the request through the proxy",
 	}
 
-	security := c.GetHeader("Request-Filter")
+	security := c.GetHeader("Request-Security")
 	if security == "" {
+		fmt.Println(1)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
 	if s.filteredSecurity[security] {
+		fmt.Println(2)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
 	if s.onceUsedSecurity[security] {
+		fmt.Println(3)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
 	decrypted := aes256.Decrypt(security, s.passPhrase)
 	if decrypted == "" || !s.basePlainTemplate.MatchString(decrypted) {
+		fmt.Println(4)
 		s.filteredSecurity[security] = true
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
