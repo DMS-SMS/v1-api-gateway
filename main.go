@@ -147,7 +147,7 @@ func main() {
 	router := gin.Default()
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
-	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization")
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
 	router.Use(middleware.SecurityFilter(), corsHandler, middleware.DosDetector(), middleware.Correlator())
 
