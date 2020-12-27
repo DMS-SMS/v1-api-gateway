@@ -23,7 +23,7 @@ func DosDetector() gin.HandlerFunc {
 }
 
 func (d *dosDetector) detectDos (c *gin.Context) {
-	cip := c.ClientIP()
+	cip := c.Request.RemoteAddr
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
