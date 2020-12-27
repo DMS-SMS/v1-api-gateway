@@ -231,6 +231,6 @@ func main() {
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
 
-	log.Fatal(router.Run(":80"))
+	log.Fatal(router.Run(":81"))
 }
 
