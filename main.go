@@ -149,7 +149,7 @@ func main() {
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
-	router.Use(middleware.SecurityFilter(), corsHandler, middleware.DosDetector(), middleware.Correlator())
+	router.Use(middleware.SecurityFilter(), corsHandler, middleware.Correlator()) // middleware.DosDetector() 삭제
 
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
