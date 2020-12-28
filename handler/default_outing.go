@@ -633,7 +633,7 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 			"start_time":    rpcResp.StartTime,
 			"end_time":      rpcResp.EndTime,
 			"outing_status": rpcResp.OutingStatus,
-			"name":          rpcResp.OutingStatus,
+			"name":          rpcResp.Name,
 			"grade":         rpcResp.Grade,
 			"group":         rpcResp.Group,
 			"number":        rpcResp.Number,
