@@ -680,7 +680,7 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
 		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
+	} else if action := c.Param("action"); !(action == "parent-approve" || action == "parent-reject") {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
 		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
