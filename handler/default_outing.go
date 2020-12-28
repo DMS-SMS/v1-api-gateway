@@ -638,6 +638,7 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 			"group":         rpcResp.Group,
 			"number":        rpcResp.Number,
 			"profile_uri":   rpcResp.ProfileImageUri,
+			"reason":        rpcResp.Reason,
 		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
