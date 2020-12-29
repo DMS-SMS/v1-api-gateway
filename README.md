@@ -37,7 +37,7 @@
 <br>
 
 ## **서비스 분해**
-> API Gateway에 대한 **HTTP API** 및 gRPC 서비스들에 대한 **RPC API**에 대해 **설계한 내용**들은 [**HTTP API 설계**](https://www.notion.so/HTTP-API-e6805bd5bf154c64bc367d7755badfc6)와 [**RPC API(Proto) 설계**](https://www.notion.so/RPC-API-Proto-064e1962f27643f3bdcdadb6307d545b)에서  추가로 확인하실 수 있습니다.
+> API Gateway에 대한 **HTTP API** 및 gRPC 서비스들에 대한 **RPC API**에 대해 **설계한 내용**들은 [**HTTP API 설계**](https://www.notion.so/API-1498b7b706ad4a5284fbc9567a8184be)와 [**RPC API(Proto) 설계**](https://www.notion.so/RPC-API-Proto-710988a1fc3744a3bf2df7f6ee3762ce)에서  추가로 확인하실 수 있습니다.
 
 > 참고로, **protocol-buffer** 관련 파일들을 모와둔 [**레포지토리**](https://github.com/DMS-SMS/v1-protocol-buffer)에서도 참고하실 수 있습니다.  
 
