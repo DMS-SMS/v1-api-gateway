@@ -633,11 +633,12 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 			"start_time":    rpcResp.StartTime,
 			"end_time":      rpcResp.EndTime,
 			"outing_status": rpcResp.OutingStatus,
-			"name":          rpcResp.OutingStatus,
+			"name":          rpcResp.Name,
 			"grade":         rpcResp.Grade,
 			"group":         rpcResp.Group,
 			"number":        rpcResp.Number,
 			"profile_uri":   rpcResp.ProfileImageUri,
+			"reason":        rpcResp.Reason,
 		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
@@ -679,7 +680,7 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
 		uuidClaims = claims
 		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
+	} else if action := c.Param("action"); !(action == "parent-approve" || action == "parent-reject") {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
 		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
@@ -1194,19 +1195,6 @@ func (h *_default) GetOutingByOCode(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
 		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
-
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 

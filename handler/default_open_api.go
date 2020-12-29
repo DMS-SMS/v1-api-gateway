@@ -125,8 +125,10 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		"lastBuildDate": decodedResp.LastBuildDate, "total": decodedResp.Total, "start": decodedResp.Start, "display": decodedResp.Display}
 	c.JSON(resp.StatusCode, sendResp)
 	respBytes, _ := json.Marshal(sendResp)
+	now := time.Now()
+	nowDate := fmt.Sprintf("%d-%d-%d", now.Year(), now.Month(), now.Day())
 	entry.WithFields(logrus.Fields{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": decodedResp.ErrorMessage,
-		"response": string(respBytes), "request": string(reqBytes)}).Info()
+		"response": string(respBytes), "request": string(reqBytes), "date": nowDate}).Info()
 	topSpan.LogFields(log.Int("status", resp.StatusCode), log.String("code", decodedResp.ErrorCode), log.String("message", decodedResp.ErrorMessage))
 	topSpan.SetTag("status", resp.StatusCode).SetTag("code", decodedResp.ErrorCode).Finish()
 

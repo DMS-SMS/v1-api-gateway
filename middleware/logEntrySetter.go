@@ -23,7 +23,7 @@ func (l *logEntrySetter) setLogEntry(c *gin.Context) {
 	entry := l.logger.WithFields(logrus.Fields{
 		"path":         c.Request.URL.Path,
 		"method":       c.Request.Method,
-		"client_ip":    c.ClientIP(),
+		"client_ip":    c.Request.RemoteAddr,
 		"X-Request-Id": c.GetHeader("X-Request-Id"),
 		"header":       string(headerBytes),
 		"full_uri":     c.FullPath(),

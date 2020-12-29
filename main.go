@@ -24,6 +24,7 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -58,6 +59,11 @@ func main() {
 	defer func() {
 		_ = closer.Close()
 	}()
+
+	//location, err := time.LoadLocation("Asia/Seoul")
+	//if err != nil {
+	//	log.Fatalf("error while loading location for time, err: %v", err)
+	//}
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
@@ -106,6 +112,7 @@ func main() {
 		handler.ConsulAgent(consulAgent),
 		handler.Validate(validator.New()),
 		handler.Tracer(apiTracer),
+		handler.Location(time.UTC),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
 		handler.OutingService(outingSrvCli),
@@ -117,17 +124,17 @@ func main() {
 	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
 		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
 	}
-	authLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/auth.log", os.O_CREATE|os.O_RDWR, 0600)
+	authLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/auth.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
-	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR, 0600)
+	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
-	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR, 0600)
+	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
-	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR, 0600)
+	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
-	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR, 0600)
+	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
-	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR, 0600)
+	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
 
 	authLogger := logrus.New()
@@ -147,9 +154,9 @@ func main() {
 	router := gin.Default()
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
-	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization")
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
-	router.Use(middleware.SecurityFilter(), corsHandler, middleware.DosDetector(), middleware.Correlator())
+	router.Use(corsHandler, middleware.SecurityFilter(), middleware.Correlator()) // middleware.DosDetector() 삭제
 
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
@@ -193,11 +200,11 @@ func main() {
 	clubRouter.GET("/v1/leaders/uuid/:leader_uuid/club-uuid", httpHandler.GetClubUUIDWithLeaderUUID)
 
 	// club service api for club leader
+	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
 	clubRouter.POST("/v1/clubs/uuid/:club_uuid/members", httpHandler.AddClubMember)
 	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid/members/:student_uuid", httpHandler.DeleteClubMember)
 	clubRouter.PUT("/v1/clubs/uuid/:club_uuid/leader", httpHandler.ChangeClubLeader)
 	clubRouter.PATCH("/v1/clubs/uuid/:club_uuid", httpHandler.ModifyClubInform)
-	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
 	clubRouter.POST("/v1/recruitments", httpHandler.RegisterRecruitment)
 	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
