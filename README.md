@@ -41,35 +41,40 @@
 
 > 참고로, **protocol-buffer** 관련 파일들을 모와둔 [**레포지토리**](https://github.com/DMS-SMS/v1-protocol-buffer)에서도 참고하실 수 있습니다.  
 
-1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) *(개발 중)*
+1. ### [**API Gateway**](https://github.com/DMS-SMS/v1-api-gateway) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.api.gateway
     - **설명** -> 적절한 서비스에 **사용자 요청 라우팅** 서비스
     - **개발** -> 박진홍
 
-2. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth) *(개발 완료)*
+2. ### [**Health Checker**](https://github.com/DMS-SMS/v1-health-checker) *(개발 전)*
+    - **이름** -> DMS.SMS.v1.api.health-checker
+    - **기능** -> Consul을 이용한 서비스 및 엔드포인트를 이용한 API **상태 체크 및 기록 관리**
+    - **개발** -> 박진홍
+
+3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing) *(개발 완료)*
+    - **이름** -> DMS.SMS.v1.service.outing
+    - **기능** -> **외출증** 관리 서비스
+    - **개발** -> 손민기
+    
+4. ### [**Auth Service**](https://github.com/DMS-SMS/v1-service-auth) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.service.auth
     - **설명** -> 학생, 선생님, 부모님 **계정 및 정보** 관리 서비스
     - **개발** -> 박진홍
 
-3. ### [**Outing Service**](https://github.com/DMS-SMS/v1-service-outing) *(개발 중)*
-    - **이름** -> DMS.SMS.v1.service.outing
-    - **기능** -> **외출증** 관리 서비스
-    - **개발** -> 손민기
-
-4. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 완료)*
-    - **이름** -> DMS.SMS.v1.service.club
-    - **기능** -> **동아리(정보, 모집)** 관리 서비스
-    - **개발** -> 박진홍
-
-5. ### [**Announement Service**](https://github.com/DMS-SMS/v1-service-announcement) *(개발 전)*
+5. ### [**Announement Service**](https://github.com/DMS-SMS/v1-service-announcement) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.service.announcement
     - **기능** -> **공지(학교, 동아리)** 관리 서비스
     - **개발** -> 손민기
 
-6. ### [**Schedule Service**](https://github.com/DMS-SMS/v1-service-schedule) *(개발 전)*
+6. ### [**Schedule Service**](https://github.com/DMS-SMS/v1-service-schedule) *(개발 완료)*
     - **이름** -> DMS.SMS.v1.service.schedule
     - **기능** -> **학사 일정(시간표, 캘린더)** 관리 서비스
     - **개발** -> 손민기
+
+7. ### [**Club Service**](https://github.com/DMS-SMS/v1-service-club) *(개발 완료)*
+    - **이름** -> DMS.SMS.v1.service.club
+    - **기능** -> **동아리(정보, 모집)** 관리 서비스
+    - **개발** -> 박진홍
 
 <br>
 
@@ -103,6 +108,12 @@
 <br>
 
 ## **배포 방식**
-- 각각의 서비스들은 **AWS EKS 클러스터**의 **노드**마다 하나씩 **Public Subnet**및 **Private Subnet**에 알맞게 배치되어 실행중입니다.
+**(2020-09-19)**
+- ~~각각의 서비스들은 **AWS EKS 클러스터**의 **노드**마다 하나씩 **Public Subnet**및 **Private Subnet**에 알맞게 배치되어 실행중입니다.~~
+- ~~배포 서비스 업데이트 방식은 새로운 버전의 서비스 실행 파일이 담긴 Docker Image를 **Docker Hub에 올린** 후 AWS EKS 클러스터에 연결된 **kubectl 명령어**를 이용해서 **deployment 객체의 이미지 버전을 변경**합니다.~~ 
 
-- 배포 서비스 업데이트 방식은 새로운 버전의 서비스 실행 파일이 담긴 Docker Image를 **Docker Hub에 올린** 후 AWS EKS 클러스터에 연결된 **kubectl 명령어**를 이용해서 **deployment 객체의 이미지 버전을 변경**합니다.
+**(2020-11-24)**
+- ~~AWS EKS 비용 지원 문제로 인해 **EC2에서 직접 k8s 클러스터를 실행**시켜서 운영하고 있습니다.~~ 
+
+**(2020-12-29)**
+- 리소스(메모리) 용량 문제로 k8s에서 **docker swarm**로 컨테이너 관리 프레임워크를 바꿔서 운영중입니다.
