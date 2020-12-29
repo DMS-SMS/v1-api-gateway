@@ -49,6 +49,7 @@ type _default struct {
 	BreakerCfg      BreakerConfig
 	DefaultCallOpts []client.CallOption
 	client          *http.Client
+	location        *time.Location
 }
 
 type BreakerConfig struct {
@@ -146,5 +147,11 @@ func Tracer(tracer opentracing.Tracer) FieldSetter {
 func Validate(validate *validator.Validate) FieldSetter {
 	return func(h *_default) {
 		h.validate = validate
+	}
+}
+
+func Location(location *time.Location) FieldSetter {
+	return func(h *_default) {
+		h.location = location
 	}
 }
