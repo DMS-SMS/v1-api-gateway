@@ -24,6 +24,7 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -58,6 +59,11 @@ func main() {
 	defer func() {
 		_ = closer.Close()
 	}()
+
+	//location, err := time.LoadLocation("Asia/Seoul")
+	//if err != nil {
+	//	log.Fatalf("error while loading location for time, err: %v", err)
+	//}
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
@@ -106,6 +112,7 @@ func main() {
 		handler.ConsulAgent(consulAgent),
 		handler.Validate(validator.New()),
 		handler.Tracer(apiTracer),
+		handler.Location(time.UTC),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
 		handler.OutingService(outingSrvCli),
