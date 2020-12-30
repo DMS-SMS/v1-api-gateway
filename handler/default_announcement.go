@@ -1014,7 +1014,7 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.Uuid = uuidClaims.UUID
 		rpcReq.Type = c.Param("type")
-		rpcReq.Query = c.Param("search_param")
+		rpcReq.Query = c.Param("search_query")
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.announcementService.SearchAnnouncements(ctxForReq, rpcReq, callOpts...)
 		announcementSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
