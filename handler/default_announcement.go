@@ -1079,7 +1079,7 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 				"is_checked":        announcement.IsChecked,
 			}
 		}
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "announcements": announcements}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "size": rpcResp.Size, "announcements": announcements}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
