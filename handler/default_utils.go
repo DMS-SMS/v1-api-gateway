@@ -73,9 +73,9 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 			msg = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
 			return
 		}
-	case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest,
-		 *entity.GetStudentOutingsRequest, *entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest,
-		 *entity.GetPlaceWithNaverOpenAPIRequest:
+	case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest, *entity.GetStudentOutingsRequest,
+		 *entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
+		 *entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest:
 		if err := c.ShouldBindQuery(bindReq); err != nil {
 			ok = false
 			code = respcode.FailToBindRequestToStruct
