@@ -169,7 +169,7 @@ func main() {
 	authRouter.PUT("/v1/students/uuid/:student_uuid/password", httpHandler.ChangeStudentPW)
 	authRouter.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
 	authRouter.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
-	authRouter.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
+	authRouter.POST("/v1/students/with-uuids", httpHandler.GetStudentInformsWithUUIDs)
 	authRouter.GET("/v1/students/uuid/:student_uuid/parent", httpHandler.GetParentWithStudentUUID)
 	// auth service api for teacher
 	authRouter.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
