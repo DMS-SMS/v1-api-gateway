@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 )
 
 type securityFilter struct {
@@ -16,6 +17,7 @@ type securityFilter struct {
 	filteredSecurity  map[string]bool
 	onceUsedSecurity  map[string]bool
 	basePlainTemplate *regexp.Regexp
+	mutex             *sync.Mutex
 }
 
 func SecurityFilter() gin.HandlerFunc {
@@ -34,6 +36,7 @@ func SecurityFilter() gin.HandlerFunc {
 		filteredSecurity:  map[string]bool{},
 		onceUsedSecurity:  map[string]bool{},
 		basePlainTemplate: regexp.MustCompile(fmt.Sprintf("^%s:\\d{10}", basePlain)),
+		mutex:             &sync.Mutex{},
 	}).filterSecurity
 }
 
@@ -77,6 +80,9 @@ func (s *securityFilter) filterSecurity(c *gin.Context) {
 		return
 	}
 
+	s.mutex.Lock()
 	s.onceUsedSecurity[security] = true
+	s.mutex.Unlock()
+
 	c.Next()
 }
