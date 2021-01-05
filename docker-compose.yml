@@ -15,6 +15,7 @@ services:
       - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
       - SECURITY_BASE_PLAIN=${SECURITY_BASE_PLAIN}
       - SECURITY_PASS_PHRASE=${SECURITY_PASS_PHRASE}
+      - SMS_AWS_BUCKET=${SMS_AWS_BUCKET}
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
