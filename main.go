@@ -27,6 +27,9 @@ import (
 	"time"
 )
 
+// start profiling in this package init function
+import _ "gateway/tool/profiling"
+
 func main() {
 	// create consul connection
 	consulCfg := api.DefaultConfig()
@@ -198,7 +201,6 @@ func main() {
 	clubRouter.GET("/v1/clubs/count", httpHandler.GetTotalCountOfClubs)
 	clubRouter.GET("/v1/recruitments/count", httpHandler.GetTotalCountOfCurrentRecruitments)
 	clubRouter.GET("/v1/leaders/uuid/:leader_uuid/club-uuid", httpHandler.GetClubUUIDWithLeaderUUID)
-
 	// club service api for club leader
 	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
 	clubRouter.POST("/v1/clubs/uuid/:club_uuid/members", httpHandler.AddClubMember)
