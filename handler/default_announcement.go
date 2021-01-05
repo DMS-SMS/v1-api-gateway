@@ -1246,7 +1246,7 @@ func (h *_default) GetMyAnnouncements(c *gin.Context) {
 				"is_checked":        announcement.IsChecked,
 			}
 		}
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "announcements": announcements}
+		sendResp := gin.H{"status": status, "code": _code, "size": rpcResp.Size, "message": msg, "announcements": announcements}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
