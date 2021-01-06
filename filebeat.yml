@@ -16,8 +16,8 @@ filebeat.inputs:
       server: dms-sms
 #    scan_frequency: 3s
 
-output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
+output.logstash:
+  hosts: ['DSM_SMS_logstash:5044']
 
 setup.kibana:
   host: ['DSM_SMS_kibana:5601']
