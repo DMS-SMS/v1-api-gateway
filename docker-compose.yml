@@ -1,12 +1,15 @@
 version: '3.5'
 services:
-  api-gateway-82:
+  api-gateway:
     image: jinhong0719/dms-sms-api-gateway:${VERSION}.RELEASE
     container_name: api-gateway
     networks:
       - dms-sms-local
     ports:
-      - 82:82
+    - target: 80
+      published: 80
+      protocol: tcp
+      mode: host
     environment:
       - CONSUL_ADDRESS=${CONSUL_ADDRESS}
       - JAEGER_ADDRESS=${JAEGER_ADDRESS}
