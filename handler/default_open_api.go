@@ -113,7 +113,7 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 
 	if resp.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("unexpected error occurs while decoding response body from naver open api, reason: %s", decodedResp.ErrorMessage)
-		c.JSON(resp.StatusCode, gin.H{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": msg})
+		c.JSON(resp.StatusCode, gin.H{"status": resp.StatusCode, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": msg, "request": string(reqBytes)}).Warn()
 		topSpan.LogFields(log.Int("status", resp.StatusCode), log.String("code", decodedResp.ErrorCode), log.String("message", msg))
 		topSpan.SetTag("status", resp.StatusCode).SetTag("code", decodedResp.ErrorCode).Finish()
@@ -121,7 +121,7 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	}
 
 	decodedResp.ErrorMessage = "succeed to get place list from naver open api"
-	sendResp := gin.H{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": decodedResp.ErrorMessage, "item": decodedResp.Items,
+	sendResp := gin.H{"status": resp.StatusCode, "code": 0, "message": decodedResp.ErrorMessage, "item": decodedResp.Items,
 		"lastBuildDate": decodedResp.LastBuildDate, "total": decodedResp.Total, "start": decodedResp.Start, "display": decodedResp.Display}
 	c.JSON(resp.StatusCode, sendResp)
 	respBytes, _ := json.Marshal(sendResp)
