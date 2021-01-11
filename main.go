@@ -23,6 +23,7 @@ import (
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
@@ -155,6 +156,11 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	healthCheckRouter := router.Group("/")
+	healthCheckRouter.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "pong")
+	})
+
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
@@ -242,4 +248,3 @@ func main() {
 
 	log.Fatal(router.Run(":80"))
 }
-
