@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gateway/entity/validator"
 	"gateway/handler"
 	"gateway/middleware"
@@ -158,6 +159,12 @@ func main() {
 	healthCheckRouter := router.Group("/")
 	healthCheckRouter.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "pong")
+	})
+
+	// routing API to use in consul watch
+	consulWatchRouter := router.Group("/")
+	consulWatchRouter.GET("/consul/watch/:service_name", func(c *gin.Context) {
+		fmt.Println(c.Param("service_name"))
 	})
 
 	// add middleware handler
