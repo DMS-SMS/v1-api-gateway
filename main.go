@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gateway/entity/validator"
 	"gateway/handler"
 	"gateway/middleware"
@@ -157,15 +156,13 @@ func main() {
 
 	// routing ping & pong API
 	healthCheckRouter := router.Group("/")
-	healthCheckRouter.GET("/ping", func(c *gin.Context) {
+	healthCheckRouter.GET("/ping", func(c *gin.Context) { // add in v.1.0.2
 		c.JSON(http.StatusOK, "pong")
 	})
 
 	// routing API to use in consul watch
 	consulWatchRouter := router.Group("/")
-	consulWatchRouter.GET("/consul/watch/:service_name", func(c *gin.Context) {
-		fmt.Println(c.Param("service_name"))
-	})
+	consulWatchRouter.POST("/events/types/consul-change", httpHandler.PublishConsulChangeEvent) // add in v.1.0.2
 
 	// add middleware handler
 	corsConfig := cors.DefaultConfig()
