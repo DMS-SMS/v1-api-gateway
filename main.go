@@ -64,11 +64,6 @@ func main() {
 		_ = closer.Close()
 	}()
 
-	//location, err := time.LoadLocation("Asia/Seoul")
-	//if err != nil {
-	//	log.Fatalf("error while loading location for time, err: %v", err)
-	//}
-
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
 	authSrvCli := struct {
@@ -124,7 +119,7 @@ func main() {
 		handler.AnnouncementService(announcementSrvCli),
 	)
 
-	// create log file & logger
+	// create log file
 	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
 		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
 	}
@@ -141,6 +136,7 @@ func main() {
 	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
 
+	// create logger & add hooks
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
@@ -154,19 +150,24 @@ func main() {
 	openApiLogger := logrus.New()
 	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
 
+	// create router
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	// routing ping & pong API
 	healthCheckRouter := router.Group("/")
 	healthCheckRouter.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "pong")
 	})
 
+	// add middleware handler
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
 	router.Use(corsHandler, middleware.SecurityFilter(), middleware.Correlator()) // middleware.DosDetector() 삭제
 
+	// routing auth service API
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
 	authRouter.POST("/v1/students", httpHandler.CreateNewStudent)
@@ -192,6 +193,7 @@ func main() {
 	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
 	authRouter.GET("/v1/parents/uuid/:parent_uuid/children", httpHandler.GetChildrenInformsWithUUID)
 
+	// routing club service API
 	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
 	clubRouter.POST("/v1/clubs", httpHandler.CreateNewClub)
@@ -217,6 +219,7 @@ func main() {
 	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
 
+	// routing outing service API
 	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
 	outingRouter.POST("/v1/outings", httpHandler.CreateOuting)
 	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", httpHandler.GetStudentOutings)
@@ -226,6 +229,7 @@ func main() {
 	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
 	outingRouter.GET("/v1/outings/code/:OCode", httpHandler.GetOutingByOCode)
 
+	// routing schedule service API
 	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
 	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
 	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", httpHandler.GetSchedule)
@@ -233,6 +237,7 @@ func main() {
 	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
 
+	// routing announcement service API
 	announcementRouter := router.Group("/", middleware.LogEntrySetter(announcementLogger))
 	announcementRouter.POST("/v1/announcements", httpHandler.CreateAnnouncement)
 	announcementRouter.GET("/v1/announcements/types/:type", httpHandler.GetAnnouncements)
@@ -243,8 +248,10 @@ func main() {
 	announcementRouter.GET("/v1/announcements/types/:type/query/:search_query", httpHandler.SearchAnnouncements)
 	announcementRouter.GET("/v1/announcements/writer-uuid/:writer_uuid", httpHandler.GetMyAnnouncements)
 
+	// routing open-api agent API
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
 
+	// run server
 	log.Fatal(router.Run(":80"))
 }
