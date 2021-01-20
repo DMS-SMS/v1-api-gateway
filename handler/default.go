@@ -8,6 +8,7 @@ import (
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
 	"gateway/tool/consul"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
 	"github.com/micro/go-micro/v2/client"
@@ -58,6 +59,8 @@ type _default struct {
 
 	// filtering consul watch index per service
 	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest
+	// aws session for publish message in sns
+	awsSession        *session.Session
 }
 
 type BreakerConfig struct {
@@ -162,5 +165,11 @@ func Validate(validate *validator.Validate) FieldSetter {
 func Location(location *time.Location) FieldSetter {
 	return func(h *_default) {
 		h.location = location
+	}
+}
+
+func AWSSession(awsSession *session.Session) FieldSetter {
+	return func(h *_default) {
+		h.awsSession = awsSession
 	}
 }
