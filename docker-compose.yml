@@ -23,6 +23,7 @@ services:
       - SMS_AWS_REGION=${SMS_AWS_REGION}  # add in v.1.0.2
       - SMS_AWS_BUCKET=${SMS_AWS_BUCKET}
       - CONSUL_INDEX_HEADER=${CONSUL_INDEX_HEADER}
+      - SNS_TOPIC_ARN=${SNS_TOPIC_ARN}    # add in v.1.0.2
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
