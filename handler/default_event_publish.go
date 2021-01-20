@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+	"gateway/entity"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -30,4 +33,13 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 		c.Status(http.StatusOK)
 		return
 	}
+
+	var req []entity.PublishConsulChangeEventRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	s, _ := json.MarshalIndent(req, "", "\t")
+	fmt.Println(string(s))
 }
