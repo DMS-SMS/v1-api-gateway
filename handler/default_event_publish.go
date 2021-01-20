@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
 	"gateway/entity"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -56,6 +57,16 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 		return
 	}
 
+	pubOutput, err := sns.New(h.awsSession).Publish(&sns.PublishInput{
+		Message:  aws.String("ConsulChangeEvent"),
+		TopicArn: aws.String(snsTopicArn),
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		consulIndexMutex.Unlock()
+		return
+	}
+
 	if _, ok := h.consulIndexFilter[service]; !ok {
 		h.consulIndexFilter[service] = map[consulIndex][]entity.PublishConsulChangeEventRequest{}
 	}
@@ -67,6 +78,7 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	})
 	consulIndexMutex.Unlock()
 
-	s, _ := json.MarshalIndent(req, "", "\t")
-	fmt.Println(string(s))
+	log.Printf("PUBLISH NEW MESSAGE TO SNS! MESSAGE ID: %s, SNS ARN: %s\n", *pubOutput.MessageId, snsTopicArn)
+	c.Status(http.StatusOK)
+	return
 }
