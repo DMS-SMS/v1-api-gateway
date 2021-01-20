@@ -6,7 +6,10 @@ import (
 	"gateway/entity"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"sync"
 )
+
+var consulIndexMutex = sync.Mutex{}
 
 func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	respFor407 := struct {
@@ -34,11 +37,28 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 		return
 	}
 
+	service := serviceName(c.GetHeader("Service"))
+	index := consulIndex(c.GetHeader(consulIndexHeader))
+
+	consulIndexMutex.Lock()
+	if _, exist := h.consulIndexFilter[service][index]; exist {
+		c.Status(http.StatusConflict)
+		consulIndexMutex.Unlock()
+		return
+	}
+
 	var req []entity.PublishConsulChangeEventRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
+		consulIndexMutex.Unlock()
 		return
 	}
+
+	if _, ok := h.consulIndexFilter[service]; !ok {
+		h.consulIndexFilter[service] = map[consulIndex][]entity.PublishConsulChangeEventRequest{} 
+	}
+	h.consulIndexFilter[service][index] = req
+	consulIndexMutex.Unlock()
 
 	s, _ := json.MarshalIndent(req, "", "\t")
 	fmt.Println(string(s))
