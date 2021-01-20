@@ -19,7 +19,7 @@ import (
 )
 
 type serviceName string
-type consulIndex int
+type consulIndex string
 
 type _default struct {
 	authService interface {
