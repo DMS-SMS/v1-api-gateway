@@ -11,6 +11,9 @@ import (
 	scheduleproto "gateway/proto/golang/schedule"
 	consulagent "gateway/tool/consul/agent"
 	topic "gateway/utils/topic/golang"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -28,7 +31,7 @@ import (
 	"time"
 )
 
-// start profiling in this package init function
+// start profiling in this package init function (add in v.1.0.2)
 import _ "gateway/tool/profiling"
 
 func main() {
@@ -63,6 +66,24 @@ func main() {
 	defer func() {
 		_ = closer.Close()
 	}()
+
+	// create aws session (add in v.1.0.2)
+	awsId := os.Getenv("SMS_AWS_ID")
+	if awsId == "" {
+		log.Fatal("please set SMS_AWS_ID in environment variable")
+	}
+	awsKey := os.Getenv("SMS_AWS_KEY")
+	if awsKey == "" {
+		log.Fatal("please set SMS_AWS_KEY in environment variable")
+	}
+	s3Region := os.Getenv("SMS_AWS_REGION")
+	if s3Region == "" {
+		log.Fatal("please set SMS_AWS_REGION in environment variable")
+	}
+	awsSession, err := session.NewSession(&aws.Config{
+		Region:      aws.String(s3Region),
+		Credentials: credentials.NewStaticCredentials(awsId, awsKey, ""),
+	})
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
@@ -111,6 +132,7 @@ func main() {
 		handler.ConsulAgent(consulAgent),
 		handler.Validate(validator.New()),
 		handler.Tracer(apiTracer),
+		handler.AWSSession(awsSession),
 		handler.Location(time.UTC),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
