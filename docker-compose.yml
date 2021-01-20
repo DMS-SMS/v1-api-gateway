@@ -18,6 +18,9 @@ services:
       - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
       - SECURITY_BASE_PLAIN=${SECURITY_BASE_PLAIN}
       - SECURITY_PASS_PHRASE=${SECURITY_PASS_PHRASE}
+      - SMS_AWS_ID=${SMS_AWS_ID}          # add in v.1.0.2
+      - SMS_AWS_KEY=${SMS_AWS_KEY}        # add in v.1.0.2
+      - SMS_AWS_REGION=${SMS_AWS_REGION}  # add in v.1.0.2
       - SMS_AWS_BUCKET=${SMS_AWS_BUCKET}
       - CONSUL_INDEX_HEADER=${CONSUL_INDEX_HEADER}
     volumes:
