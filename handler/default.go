@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"gateway/entity"
 	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
@@ -56,7 +57,7 @@ type _default struct {
 	location        *time.Location
 
 	// filtering consul watch index per service
-	consulIndexFilter map[serviceName]map[consulIndex]bool
+	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest
 }
 
 type BreakerConfig struct {
@@ -80,7 +81,7 @@ func Default(setters ...FieldSetter) (h *_default) {
 	h.mutex = sync.Mutex{}
 	h.breakers = map[string]*breaker.Breaker{}
 	h.client = &http.Client{}
-	h.consulIndexFilter = map[serviceName]map[consulIndex]bool{}
+	h.consulIndexFilter = map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest{}
 
 	return
 }
