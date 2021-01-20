@@ -15,7 +15,7 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	}
 
 	switch true {
-	case c.GetHeader(consulSecretHeader) != "":
+	case c.GetHeader(consulIndexHeader) != "":
 	default:
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
