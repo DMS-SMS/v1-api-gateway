@@ -14,4 +14,14 @@ type PublishConsulChangeEventRequest struct {
 		Port    int    `json:"Port"`
 		Address string `json:"Address"`
 	} `json:"Service"`
+
+	Checks []struct {
+		Node        string `json:"Node"`
+		CheckID     string `json:"CheckID"`
+		Name        string `json:"Name"`
+		Status      string `json:"Status"`
+		Output      string `json:"Output"`
+		ServiceID   string `json:"ServiceID"`
+		ServiceName string `json:"ServiceName"`
+	} `json:"Checks"`
 }
