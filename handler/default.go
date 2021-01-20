@@ -58,9 +58,9 @@ type _default struct {
 	location        *time.Location
 
 	// filtering consul watch index per service
-	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest
+	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest // Add in v.1.0.2
 	// aws session for publish message in sns
-	awsSession        *session.Session
+	awsSession        *session.Session // Add in v.1.0.2
 }
 
 type BreakerConfig struct {
