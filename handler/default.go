@@ -17,6 +17,9 @@ import (
 	"time"
 )
 
+type serviceName string
+type consulIndex int
+
 type _default struct {
 	authService interface {
 		authproto.AuthAdminService
@@ -40,6 +43,7 @@ type _default struct {
 	announcementService interface {
 		announcementproto.AnnouncementService
 	}
+
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
 	tracer          opentracing.Tracer
@@ -50,6 +54,9 @@ type _default struct {
 	DefaultCallOpts []client.CallOption
 	client          *http.Client
 	location        *time.Location
+
+	// filtering consul watch index per service
+	consulIndexFilter map[serviceName]map[consulIndex]bool
 }
 
 type BreakerConfig struct {
@@ -73,6 +80,7 @@ func Default(setters ...FieldSetter) (h *_default) {
 	h.mutex = sync.Mutex{}
 	h.breakers = map[string]*breaker.Breaker{}
 	h.client = &http.Client{}
+	h.consulIndexFilter = map[serviceName]map[consulIndex]bool{}
 
 	return
 }
