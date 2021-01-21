@@ -10,6 +10,7 @@ import (
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
 	consulagent "gateway/tool/consul/agent"
+	"gateway/tool/env"
 	topic "gateway/utils/topic/golang"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -37,10 +38,7 @@ import _ "gateway/tool/profiling"
 func main() {
 	// create consul connection
 	consulCfg := api.DefaultConfig()
-	consulCfg.Address = os.Getenv("CONSUL_ADDRESS")
-	if consulCfg.Address == "" {
-		log.Fatal("please set CONSUL_ADDRESS in environment variables")
-	}
+	consulCfg.Address = env.GetAndFatalIfNotExits("CONSUL_ADDRESS") // change how to get env from local in v.1.0.2
 	consul, err := api.NewClient(consulCfg)
 	if err != nil {
 		log.Fatalf("unable to connect consul agent, err: %v", err)
@@ -51,10 +49,7 @@ func main() {
 	)
 
 	// create jaeger connection
-	jaegerAddr := os.Getenv("JAEGER_ADDRESS")
-	if jaegerAddr == "" {
-		log.Fatal("please set JAEGER_ADDRESS in environment variables")
-	}
+	jaegerAddr := env.GetAndFatalIfNotExits("JAEGER_ADDRESS")
 	apiTracer, closer, err := jaegercfg.Configuration{
 		ServiceName: "DMS.SMS.v1.api.gateway", // add const in topic
 		Reporter: &jaegercfg.ReporterConfig{LogSpans: true, LocalAgentHostPort: jaegerAddr},
@@ -68,18 +63,9 @@ func main() {
 	}()
 
 	// create aws session (add in v.1.0.2)
-	awsId := os.Getenv("SMS_AWS_ID")
-	if awsId == "" {
-		log.Fatal("please set SMS_AWS_ID in environment variable")
-	}
-	awsKey := os.Getenv("SMS_AWS_KEY")
-	if awsKey == "" {
-		log.Fatal("please set SMS_AWS_KEY in environment variable")
-	}
-	s3Region := os.Getenv("SMS_AWS_REGION")
-	if s3Region == "" {
-		log.Fatal("please set SMS_AWS_REGION in environment variable")
-	}
+	awsId := env.GetAndFatalIfNotExits("SMS_AWS_ID")
+	awsKey := env.GetAndFatalIfNotExits("SMS_AWS_KEY")
+	s3Region := env.GetAndFatalIfNotExits("SMS_AWS_REGION")
 	awsSession, err := session.NewSession(&aws.Config{
 		Region:      aws.String(s3Region),
 		Credentials: credentials.NewStaticCredentials(awsId, awsKey, ""),
