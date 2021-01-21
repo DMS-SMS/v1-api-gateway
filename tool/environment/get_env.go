@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// get environment variable from local & occur fatal if not exist0
 func GetAndFatalIfNotExits(name string) (env string) {
 	if env = os.Getenv(name); env == "" {
 		log.Fatalf("please set %s in environment variables", name)
