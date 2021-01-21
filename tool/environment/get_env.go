@@ -2,4 +2,16 @@
 // this package is used for utility to environment variables for getting, setting, etc...
 // get_env.go is file to about getting environment
 
-package environment
+package env
+
+import (
+	"log"
+	"os"
+)
+
+func GetAndFatalIfNotExits(name string) (env string) {
+	if env = os.Getenv(name); env == "" {
+		log.Fatalf("please set %s in environment variables", name)
+	}
+	return
+}
