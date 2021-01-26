@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 )
 
 type securityFilter struct {
@@ -16,6 +17,7 @@ type securityFilter struct {
 	filteredSecurity  map[string]bool
 	onceUsedSecurity  map[string]bool
 	basePlainTemplate *regexp.Regexp
+	mutex             *sync.Mutex
 }
 
 func SecurityFilter() gin.HandlerFunc {
@@ -34,6 +36,7 @@ func SecurityFilter() gin.HandlerFunc {
 		filteredSecurity:  map[string]bool{},
 		onceUsedSecurity:  map[string]bool{},
 		basePlainTemplate: regexp.MustCompile(fmt.Sprintf("^%s:\\d{10}", basePlain)),
+		mutex:             &sync.Mutex{},
 	}).filterSecurity
 }
 
@@ -48,19 +51,16 @@ func (s *securityFilter) filterSecurity(c *gin.Context) {
 
 	security := c.GetHeader("Request-Security")
 	if security == "" {
-		fmt.Println(1)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
 	if s.filteredSecurity[security] {
-		fmt.Println(2)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
 	if s.onceUsedSecurity[security] {
-		fmt.Println(3)
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
@@ -71,12 +71,14 @@ func (s *securityFilter) filterSecurity(c *gin.Context) {
 	}
 
 	if decrypted == "" || !s.basePlainTemplate.MatchString(decrypted) {
-		fmt.Println(4)
 		s.filteredSecurity[security] = true
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
 
+	s.mutex.Lock()
 	s.onceUsedSecurity[security] = true
+	s.mutex.Unlock()
+
 	c.Next()
 }

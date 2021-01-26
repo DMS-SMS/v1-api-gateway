@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.0.0 // indirect
+	github.com/aws/aws-sdk-go v1.23.0
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eapache/go-resiliency v1.2.0

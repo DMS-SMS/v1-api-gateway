@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"gateway/entity"
 	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
 	"gateway/tool/consul"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
 	"github.com/micro/go-micro/v2/client"
@@ -16,6 +18,9 @@ import (
 	"sync"
 	"time"
 )
+
+type serviceName string
+type consulIndex string
 
 type _default struct {
 	authService interface {
@@ -40,6 +45,7 @@ type _default struct {
 	announcementService interface {
 		announcementproto.AnnouncementService
 	}
+
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
 	tracer          opentracing.Tracer
@@ -50,6 +56,11 @@ type _default struct {
 	DefaultCallOpts []client.CallOption
 	client          *http.Client
 	location        *time.Location
+
+	// filtering consul watch index per service
+	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest // Add in v.1.0.2
+	// aws session for publish message in sns
+	awsSession        *session.Session // Add in v.1.0.2
 }
 
 type BreakerConfig struct {
@@ -73,6 +84,7 @@ func Default(setters ...FieldSetter) (h *_default) {
 	h.mutex = sync.Mutex{}
 	h.breakers = map[string]*breaker.Breaker{}
 	h.client = &http.Client{}
+	h.consulIndexFilter = map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest{}
 
 	return
 }
@@ -153,5 +165,11 @@ func Validate(validate *validator.Validate) FieldSetter {
 func Location(location *time.Location) FieldSetter {
 	return func(h *_default) {
 		h.location = location
+	}
+}
+
+func AWSSession(awsSession *session.Session) FieldSetter {
+	return func(h *_default) {
+		h.awsSession = awsSession
 	}
 }

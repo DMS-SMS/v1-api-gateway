@@ -1014,7 +1014,7 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.Uuid = uuidClaims.UUID
 		rpcReq.Type = c.Param("type")
-		rpcReq.Query = c.Param("search_param")
+		rpcReq.Query = c.Param("search_query")
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
 		rpcResp, rpcErr = h.announcementService.SearchAnnouncements(ctxForReq, rpcReq, callOpts...)
 		announcementSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
@@ -1079,7 +1079,7 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 				"is_checked":        announcement.IsChecked,
 			}
 		}
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "announcements": announcements}
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "size": rpcResp.Size, "announcements": announcements}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
@@ -1246,7 +1246,7 @@ func (h *_default) GetMyAnnouncements(c *gin.Context) {
 				"is_checked":        announcement.IsChecked,
 			}
 		}
-		sendResp := gin.H{"status": status, "code": _code, "message": msg, "announcements": announcements}
+		sendResp := gin.H{"status": status, "code": _code, "size": rpcResp.Size, "message": msg, "announcements": announcements}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()

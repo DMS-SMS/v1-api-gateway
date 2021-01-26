@@ -10,7 +10,11 @@ import (
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
 	consulagent "gateway/tool/consul/agent"
+	"gateway/tool/env"
 	topic "gateway/utils/topic/golang"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -23,17 +27,18 @@ import (
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
 
+// start profiling in this package init function (add in v.1.0.2)
+import _ "gateway/tool/profiling"
+
 func main() {
 	// create consul connection
 	consulCfg := api.DefaultConfig()
-	consulCfg.Address = os.Getenv("CONSUL_ADDRESS")
-	if consulCfg.Address == "" {
-		log.Fatal("please set CONSUL_ADDRESS in environment variables")
-	}
+	consulCfg.Address = env.GetAndFatalIfNotExits("CONSUL_ADDRESS") // change how to get env from local in v.1.0.2
 	consul, err := api.NewClient(consulCfg)
 	if err != nil {
 		log.Fatalf("unable to connect consul agent, err: %v", err)
@@ -44,10 +49,7 @@ func main() {
 	)
 
 	// create jaeger connection
-	jaegerAddr := os.Getenv("JAEGER_ADDRESS")
-	if jaegerAddr == "" {
-		log.Fatal("please set JAEGER_ADDRESS in environment variables")
-	}
+	jaegerAddr := env.GetAndFatalIfNotExits("JAEGER_ADDRESS")
 	apiTracer, closer, err := jaegercfg.Configuration{
 		ServiceName: "DMS.SMS.v1.api.gateway", // add const in topic
 		Reporter: &jaegercfg.ReporterConfig{LogSpans: true, LocalAgentHostPort: jaegerAddr},
@@ -60,10 +62,14 @@ func main() {
 		_ = closer.Close()
 	}()
 
-	//location, err := time.LoadLocation("Asia/Seoul")
-	//if err != nil {
-	//	log.Fatalf("error while loading location for time, err: %v", err)
-	//}
+	// create aws session (add in v.1.0.2)
+	awsId := env.GetAndFatalIfNotExits("SMS_AWS_ID")
+	awsKey := env.GetAndFatalIfNotExits("SMS_AWS_KEY")
+	s3Region := env.GetAndFatalIfNotExits("SMS_AWS_REGION")
+	awsSession, err := session.NewSession(&aws.Config{
+		Region:      aws.String(s3Region),
+		Credentials: credentials.NewStaticCredentials(awsId, awsKey, ""),
+	})
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
@@ -112,6 +118,7 @@ func main() {
 		handler.ConsulAgent(consulAgent),
 		handler.Validate(validator.New()),
 		handler.Tracer(apiTracer),
+		handler.AWSSession(awsSession),
 		handler.Location(time.UTC),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
@@ -120,7 +127,7 @@ func main() {
 		handler.AnnouncementService(announcementSrvCli),
 	)
 
-	// create log file & logger
+	// create log file
 	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
 		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
 	}
@@ -137,6 +144,7 @@ func main() {
 	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
 	if err != nil { log.Fatal(err) }
 
+	// create logger & add hooks
 	authLogger := logrus.New()
 	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
 	clubLogger := logrus.New()
@@ -150,14 +158,28 @@ func main() {
 	openApiLogger := logrus.New()
 	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
 
+	// create router
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	// routing ping & pong API
+	healthCheckRouter := router.Group("/")
+	healthCheckRouter.GET("/ping", func(c *gin.Context) { // add in v.1.0.2
+		c.JSON(http.StatusOK, "pong")
+	})
+
+	// routing API to use in consul watch
+	consulWatchRouter := router.Group("/")
+	consulWatchRouter.POST("/events/types/consul-change", httpHandler.PublishConsulChangeEvent) // add in v.1.0.2
+
+	// add middleware handler
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
 	router.Use(corsHandler, middleware.SecurityFilter(), middleware.Correlator()) // middleware.DosDetector() 삭제
 
+	// routing auth service API
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
 	authRouter.POST("/v1/students", httpHandler.CreateNewStudent)
@@ -169,7 +191,7 @@ func main() {
 	authRouter.PUT("/v1/students/uuid/:student_uuid/password", httpHandler.ChangeStudentPW)
 	authRouter.GET("/v1/students/uuid/:student_uuid", httpHandler.GetStudentInformWithUUID)
 	authRouter.GET("/v1/student-uuids", httpHandler.GetStudentUUIDsWithInform)
-	authRouter.GET("/v1/students", httpHandler.GetStudentInformsWithUUIDs)
+	authRouter.POST("/v1/students/with-uuids", httpHandler.GetStudentInformsWithUUIDs)
 	authRouter.GET("/v1/students/uuid/:student_uuid/parent", httpHandler.GetParentWithStudentUUID)
 	// auth service api for teacher
 	authRouter.POST("/v1/login/teacher", httpHandler.LoginTeacherAuth)
@@ -183,6 +205,7 @@ func main() {
 	authRouter.GET("/v1/parent-uuids", httpHandler.GetParentUUIDsWithInform)
 	authRouter.GET("/v1/parents/uuid/:parent_uuid/children", httpHandler.GetChildrenInformsWithUUID)
 
+	// routing club service API
 	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
 	clubRouter.POST("/v1/clubs", httpHandler.CreateNewClub)
@@ -198,7 +221,6 @@ func main() {
 	clubRouter.GET("/v1/clubs/count", httpHandler.GetTotalCountOfClubs)
 	clubRouter.GET("/v1/recruitments/count", httpHandler.GetTotalCountOfCurrentRecruitments)
 	clubRouter.GET("/v1/leaders/uuid/:leader_uuid/club-uuid", httpHandler.GetClubUUIDWithLeaderUUID)
-
 	// club service api for club leader
 	clubRouter.DELETE("/v1/clubs/uuid/:club_uuid", httpHandler.DeleteClubWithUUID)
 	clubRouter.POST("/v1/clubs/uuid/:club_uuid/members", httpHandler.AddClubMember)
@@ -209,6 +231,7 @@ func main() {
 	clubRouter.PATCH("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.ModifyRecruitment)
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", httpHandler.DeleteRecruitment)
 
+	// routing outing service API
 	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
 	outingRouter.POST("/v1/outings", httpHandler.CreateOuting)
 	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", httpHandler.GetStudentOutings)
@@ -218,6 +241,7 @@ func main() {
 	outingRouter.GET("/v1/outings/with-filter", httpHandler.GetOutingWithFilter)
 	outingRouter.GET("/v1/outings/code/:OCode", httpHandler.GetOutingByOCode)
 
+	// routing schedule service API
 	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
 	scheduleRouter.POST("/v1/schedules", httpHandler.CreateSchedule)
 	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", httpHandler.GetSchedule)
@@ -225,6 +249,7 @@ func main() {
 	scheduleRouter.PATCH("/v1/schedules/uuid/:schedule_uuid", httpHandler.UpdateSchedule)
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", httpHandler.DeleteSchedule)
 
+	// routing announcement service API
 	announcementRouter := router.Group("/", middleware.LogEntrySetter(announcementLogger))
 	announcementRouter.POST("/v1/announcements", httpHandler.CreateAnnouncement)
 	announcementRouter.GET("/v1/announcements/types/:type", httpHandler.GetAnnouncements)
@@ -235,9 +260,10 @@ func main() {
 	announcementRouter.GET("/v1/announcements/types/:type/query/:search_query", httpHandler.SearchAnnouncements)
 	announcementRouter.GET("/v1/announcements/writer-uuid/:writer_uuid", httpHandler.GetMyAnnouncements)
 
+	// routing open-api agent API
 	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", httpHandler.GetPlaceWithNaverOpenAPI)
 
-	log.Fatal(router.Run(":81"))
+	// run server
+	log.Fatal(router.Run(":80"))
 }
-
