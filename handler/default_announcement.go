@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	announcementproto "gateway/proto/golang/announcement"
-	agenterrors "gateway/tool/consul/agent/errors"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
@@ -73,7 +73,7 @@ func (h *_default) CreateAnnouncement(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -228,7 +228,7 @@ func (h *_default) GetAnnouncements(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -383,7 +383,7 @@ func (h *_default) GetAnnouncementDetail(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -542,7 +542,7 @@ func (h *_default) UpdateAnnouncement(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -685,7 +685,7 @@ func (h *_default) DeleteAnnouncement(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -826,7 +826,7 @@ func (h *_default) CheckAnnouncement(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -981,7 +981,7 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1150,7 +1150,7 @@ func (h *_default) GetMyAnnouncements(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available announcement service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})

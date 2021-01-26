@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	authproto "gateway/proto/golang/auth"
-	agenterrors "gateway/tool/consul/agent/errors"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
@@ -62,7 +62,7 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -225,7 +225,7 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -368,7 +368,7 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -530,7 +530,7 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -686,7 +686,7 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -840,7 +840,7 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})

@@ -1,3 +1,6 @@
+// add file in v.1.0.2
+// default_event_publish.go is file that publish event from HTTP API to aws sns, rabbitMQ, etc ...
+
 package handler
 
 import (
@@ -13,6 +16,7 @@ import (
 
 var consulIndexMutex = sync.Mutex{}
 
+// method that publish consul change event to aws sns
 func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	respFor407 := struct {
 		Status  int    `json:"status"`
@@ -28,11 +32,6 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusProxyAuthRequired, respFor407)
 		return
 	}
-
-	// 이벤트 발생
-	// 모든 서비스 조회 새로고침 (해당 서비스 포함)
-	// 해당 서비스에 대한 연결을 새로 맺어야 한다는 뜻이니까 health checker도 받아서 ping 보냄
-	// 참고로 해당 서비스가 새로 시작될 때도 이벤트 발생 필요. (없었을 수도 있으니)
 
 	// 현재는 checks를 따로 처리하진 않음
 	if c.GetHeader("Type") == "checks" {
@@ -81,4 +80,15 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	log.Printf("PUBLISH NEW MESSAGE TO SNS! MESSAGE ID: %s, SNS ARN: %s\n", *pubOutput.MessageId, snsTopicArn)
 	c.Status(http.StatusOK)
 	return
+}
+
+// function that return closure publishing consul change event
+func (h *_default) ConsulChangeEventPublisher() func() error {
+	return func() (err error) {
+		_, err = sns.New(h.awsSession).Publish(&sns.PublishInput{
+			Message:  aws.String("ConsulChangeEvent"),
+			TopicArn: aws.String(snsTopicArn),
+		})
+		return
+	}
 }

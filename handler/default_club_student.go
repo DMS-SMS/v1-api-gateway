@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	clubproto "gateway/proto/golang/club"
-	agenterrors "gateway/tool/consul/agent/errors"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
@@ -74,7 +74,7 @@ func (h *_default) GetClubsSortByUpdateTime(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -249,7 +249,7 @@ func (h *_default) GetRecruitmentsSortByCreateTime(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -418,7 +418,7 @@ func (h *_default) GetClubInformWithUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -588,7 +588,7 @@ func (h *_default) GetClubInformsWithUUIDs(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -750,7 +750,7 @@ func (h *_default) GetRecruitmentInformWithUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -919,7 +919,7 @@ func (h *_default) GetRecruitmentUUIDWithClubUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1075,7 +1075,7 @@ func (h *_default) GetRecruitmentUUIDsWithClubUUIDs(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1217,7 +1217,7 @@ func (h *_default) GetAllClubFields(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1359,7 +1359,7 @@ func (h *_default) GetTotalCountOfClubs(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1501,7 +1501,7 @@ func (h *_default) GetTotalCountOfCurrentRecruitments(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -1643,7 +1643,7 @@ func (h *_default) GetClubUUIDWithLeaderUUID(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	scheduleproto "gateway/proto/golang/schedule"
-	agenterrors "gateway/tool/consul/agent/errors"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
 	topic "gateway/utils/topic/golang"
@@ -73,7 +73,7 @@ func (h *_default) CreateSchedule(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -228,7 +228,7 @@ func (h *_default) GetSchedule(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -392,7 +392,7 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -549,7 +549,7 @@ func (h *_default) UpdateSchedule(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -692,7 +692,7 @@ func (h *_default) DeleteSchedule(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available schedule service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
