@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"gateway/consul"
 	"gateway/entity"
 	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
-	"gateway/tool/consul"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"

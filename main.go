@@ -1,6 +1,8 @@
 package main
 
 import (
+	"gateway/consul"
+	consulagent "gateway/consul/agent"
 	"gateway/entity/validator"
 	"gateway/handler"
 	"gateway/middleware"
@@ -9,7 +11,6 @@ import (
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
-	consulagent "gateway/tool/consul/agent"
 	"gateway/tool/env"
 	topic "gateway/utils/topic/golang"
 	"github.com/aws/aws-sdk-go/aws"
