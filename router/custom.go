@@ -21,3 +21,8 @@ func New(baseRouter *gin.Engine) (router *customRouter) {
 
 	return
 }
+
+// register closure function to execute before run
+func (r *customRouter) RegisterBeforeRun(fn ...func() error) {
+	r.beforeRun = append(r.beforeRun, fn...)
+}
