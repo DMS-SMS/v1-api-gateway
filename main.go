@@ -134,10 +134,7 @@ func main() {
 	)
 
 	// create subscriber & register listener (add in v.1.0.2)
-	consulChangeQueue := os.Getenv("CHANGE_CONSUL_SQS_GATEWAY")
-	if consulChangeQueue == "" {
-		log.Fatal("please set CHANGE_CONSUL_SQS_GATEWAY in environment variable")
-	}
+	consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
 	subscriber.SetAwsSession(awsSession)
 	defaultSubscriber := subscriber.Default()
 	defaultSubscriber.RegisterBeforeStart(
