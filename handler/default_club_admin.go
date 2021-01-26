@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	agenterrors "gateway/consul/agent/errors"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	clubproto "gateway/proto/golang/club"
 	jwtutil "gateway/tool/jwt"
@@ -73,7 +73,7 @@ func (h *_default) CreateNewClub(c *gin.Context) {
 	switch err {
 	case nil:
 		break
-	case agenterrors.AvailableNodeNotExist:
+	case consulagent.ErrAvailableNodeNotFound:
 		msg := "available auth service node is not exist in consul"
 		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
