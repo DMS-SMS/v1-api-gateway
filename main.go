@@ -37,16 +37,18 @@ import (
 import _ "gateway/tool/profiling"
 
 func main() {
-	// create consul connection
+	// create consul connection & consul agent
 	consulCfg := api.DefaultConfig()
 	consulCfg.Address = env.GetAndFatalIfNotExits("CONSUL_ADDRESS") // change how to get env from local in v.1.0.2
-	consul, err := api.NewClient(consulCfg)
+	consulCli, err := api.NewClient(consulCfg)
 	if err != nil {
 		log.Fatalf("unable to connect consul agent, err: %v", err)
 	}
 	consulAgent := consulagent.Default(
-		consulagent.Client(consul),
 		consulagent.Strategy(selector.RoundRobin),
+		consulagent.Client(consulCli),
+		consulagent.Services([]consul.ServiceName{topic.AuthServiceName, topic.ClubServiceName,  // add in v.1.0.2
+			topic.OutingServiceName, topic.ScheduleServiceName, topic.AnnouncementServiceName}),
 	)
 
 	// create jaeger connection
