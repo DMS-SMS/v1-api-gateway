@@ -182,7 +182,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := customrouter.New(gin.Default())
 	router.RegisterBeforeRun(
-		// ConsulChangeEvent 발생
+		defaultHandler.ConsulChangeEventPublisher(),
 		consulAgent.ChangeAllServiceNodes,
 		defaultSubscriber.StartListening,
 	)
