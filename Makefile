@@ -22,16 +22,16 @@ run:
 
 .PHONY: service
 service:
-	kubectl apply -f ./api-gateway-service.yaml
+	kubectl apply -f .k8s/gateway/api-gateway-service.yaml
 
 .PHONY: log_volume
 log_volume:
-	kubectl apply -f ./log-data-persistentvolume.yaml
-	kubectl apply -f ./log-data-persistentvolumeclaim.yaml
+	kubectl apply -f .k8s/log/log-data-persistentvolume.yaml
+	kubectl apply -f .k8s/log/log-data-persistentvolumeclaim.yaml
 
 .PHONY: api_gateway_deploy
 deploy:
-	envsubst < ./api-gateway-deployment.yaml | kubectl apply -f -
+	envsubst < .k8s/gateway/api-gateway-deployment.yaml | kubectl apply -f -
 
 .PHONY: filebeat_run
 filebeat_run:
@@ -39,7 +39,7 @@ filebeat_run:
 
 .PHONY: filebeat_deploy
 filebeat_deploy:
-	envsubst < ./filebeat-deployment.yaml | kubectl apply -f -
+	envsubst < .k8s/filebeat/filebeat-deployment.yaml | kubectl apply -f -
 
 .PHONY: stack
 stack:
