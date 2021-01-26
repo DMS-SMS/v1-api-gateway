@@ -24,6 +24,7 @@ services:
       - SMS_AWS_BUCKET=${SMS_AWS_BUCKET}
       - CONSUL_INDEX_HEADER=${CONSUL_INDEX_HEADER}
       - SNS_TOPIC_ARN=${SNS_TOPIC_ARN}    # add in v.1.0.2
+      - CHANGE_CONSUL_SQS_GATEWAY=${CHANGE_CONSUL_SQS_GATEWAY} # add in v.1.0.2
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
