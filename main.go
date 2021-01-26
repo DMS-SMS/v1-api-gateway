@@ -11,6 +11,7 @@ import (
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
+	customrouter "gateway/router"
 	"gateway/subscriber"
 	"gateway/tool/env"
 	topic "gateway/utils/topic/golang"
@@ -180,9 +181,14 @@ func main() {
 	openApiLogger := logrus.New()
 	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
 
-	// create router
+	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
+	router := customrouter.New(gin.Default())
+	router.RegisterBeforeRun(
+		// ConsulChangeEvent 발생
+		consulAgent.ChangeAllServiceNodes,
+		defaultSubscriber.StartListening,
+	)
 
 	// routing ping & pong API
 	healthCheckRouter := router.Group("/")
