@@ -10,14 +10,14 @@ import "github.com/gin-gonic/gin"
 // Additional function is run closure after & before server start or end, etc ...
 type customRouter struct {
 	*gin.Engine
-	beforeStart []func()
+	beforeRun []func() error
 }
 
-func NewCustom(baseRouter *gin.Engine) (router *customRouter) {
+func New(baseRouter *gin.Engine) (router *customRouter) {
 	router = &customRouter{
 		Engine: baseRouter,
 	}
-	router.beforeStart = []func(){}
+	router.beforeRun = []func() error{}
 
 	return
 }
