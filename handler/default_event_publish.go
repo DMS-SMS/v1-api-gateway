@@ -81,3 +81,14 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	c.Status(http.StatusOK)
 	return
 }
+
+// function that return closure publishing consul change event
+func (h *_default) ConsulChangeEventPublisher() func() error {
+	return func() (err error) {
+		_, err = sns.New(h.awsSession).Publish(&sns.PublishInput{
+			Message:  aws.String("ConsulChangeEvent"),
+			TopicArn: aws.String(snsTopicArn),
+		})
+		return
+	}
+}
