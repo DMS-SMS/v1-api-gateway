@@ -1,4 +1,4 @@
-// Add package in v.1.0.5
+// Add package in v.1.0.2
 // subscriber package is used for handling event message occurred by SNS, RabbitMQ, etc ...
 // you can start subscribe by calling Start method with parameter, specific signature function
 
