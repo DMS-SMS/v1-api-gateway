@@ -69,7 +69,7 @@ func (d *_default) changeServiceNodes(service consul.ServiceName) error {
 	return nil
 }
 
-// move from agent/default.go to agent/default_method.go
+// move from tool/agent/default.go to agent/default_method.go
 // migrate change logic to changeServiceNodes method in v.1.0.2
 func (d *_default) GetNextServiceNode(service consul.ServiceName) (*registry.Node, error) {
 	d.nodeMutex.RLock()
@@ -107,4 +107,14 @@ func (d *_default) checkIfExistService(srv consul.ServiceName) (exist bool) {
 
 	exist = false
 	return
+}
+
+// move from tool/agent/default.go to agent/default_method.go in v.1.0.2
+func (d *_default) FailTTLHealth(checkID, note string) (err error) {
+	return d.client.Agent().FailTTL(checkID, note)
+}
+
+// move from tool/agent/default.go to agent/default_method.go in v.1.0.2
+func (d *_default) PassTTLHealth(checkID, note string) (err error) {
+	return d.client.Agent().PassTTL(checkID, note)
 }
