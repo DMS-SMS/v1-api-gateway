@@ -12,3 +12,12 @@ type customRouter struct {
 	*gin.Engine
 	beforeStart []func()
 }
+
+func NewCustom(baseRouter *gin.Engine) (router *customRouter) {
+	router = &customRouter{
+		Engine: baseRouter,
+	}
+	router.beforeStart = []func(){}
+
+	return
+}
