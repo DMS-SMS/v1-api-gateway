@@ -1,3 +1,6 @@
+// add file in v.1.0.2
+// default_event_publish.go is file that publish event from HTTP API to aws sns, rabbitMQ, etc ...
+
 package handler
 
 import (
@@ -13,6 +16,7 @@ import (
 
 var consulIndexMutex = sync.Mutex{}
 
+// method that publish consul change event to aws sns
 func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	respFor407 := struct {
 		Status  int    `json:"status"`
