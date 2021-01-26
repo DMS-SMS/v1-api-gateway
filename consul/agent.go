@@ -16,6 +16,8 @@ type Agent interface {
 	// method to refresh specific service node list
 	ChangeServiceNodes(ServiceName) error // add in v.1.0.2
 	GetNextServiceNode(ServiceName) (*registry.Node, error)
+	FailTTLHealth(checkID, note string) error
+	PassTTLHealth(checkID, note string) error
 	ServiceNodeRegistry(server.Server) func() error   // add in v.1.0.2 (move from tool/closure/consul.go)
 	ServiceNodeDeregistry(server.Server) func() error // add in v.1.0.2 (move from tool/closure/consul.go)
 }
