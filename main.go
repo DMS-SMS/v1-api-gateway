@@ -11,11 +11,13 @@ import (
 	clubproto "gateway/proto/golang/club"
 	outingproto "gateway/proto/golang/outing"
 	scheduleproto "gateway/proto/golang/schedule"
+	"gateway/subscriber"
 	"gateway/tool/env"
 	topic "gateway/utils/topic/golang"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -128,6 +130,23 @@ func main() {
 		handler.OutingService(outingSrvCli),
 		handler.ScheduleService(scheduleSrvCli),
 		handler.AnnouncementService(announcementSrvCli),
+	)
+
+	// create subscriber & register listener (add in v.1.0.2)
+	consulChangeQueue := os.Getenv("CHANGE_CONSUL_SQS_GATEWAY")
+	if consulChangeQueue == "" {
+		log.Fatal("please set CHANGE_CONSUL_SQS_GATEWAY in environment variable")
+	}
+	subscriber.SetAwsSession(awsSession)
+	defaultSubscriber := subscriber.Default()
+	defaultSubscriber.RegisterBeforeStart(
+		subscriber.SqsQueuePurger(consulChangeQueue),
+	)
+	defaultSubscriber.RegisterListeners(
+		subscriber.SqsMsgListener(consulChangeQueue, defaultHandler.ChangeConsulNodes, &sqs.ReceiveMessageInput{
+			MaxNumberOfMessages: aws.Int64(10),
+			WaitTimeSeconds:     aws.Int64(2),
+		}),
 	)
 
 	// create log file
