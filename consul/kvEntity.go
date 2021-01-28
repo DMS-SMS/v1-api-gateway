@@ -5,7 +5,7 @@ package consul
 
 // entity about redis connection config KV
 type RedisConfigKV struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
-	DB   int    `json:"DB"`
+	Host string `json:"host" validate:"required"`
+	Port int    `json:"port" validate:"required"`
+	DB   int    `json:"DB" validate:"required"`
 }
