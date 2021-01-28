@@ -22,6 +22,7 @@ import (
 	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/hashicorp/consul/api"
 	"github.com/micro/go-micro/v2/client"
 	grpccli "github.com/micro/go-micro/v2/client/grpc"
@@ -77,6 +78,19 @@ func main() {
 		Credentials: credentials.NewStaticCredentials(awsId, awsKey, ""),
 	})
 
+	// create redis client (add in v.1.0.3)
+	redisConf, err := consulAgent.GetRedisConfigFromKV("redis/gateway/local")
+	if err != nil {
+		log.Fatalf("unable to get redis connection config from consul KV, err: %v", err)
+	}
+	redisCli := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", redisConf.Host, redisConf.Port),
+		DB:   redisConf.DB,
+	})
+	defer func() {
+		_ = redisCli.Close()
+	}()
+
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
 	authSrvCli := struct {
@@ -125,6 +139,7 @@ func main() {
 		handler.Validate(validator.New()),
 		handler.Tracer(apiTracer),
 		handler.AWSSession(awsSession),
+		handler.RedisClient(redisCli),
 		handler.Location(time.UTC),
 		handler.AuthService(authSrvCli),
 		handler.ClubService(clubSrvCli),
