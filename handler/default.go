@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/eapache/go-resiliency/breaker"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-redis/redis/v8"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
@@ -57,10 +58,14 @@ type _default struct {
 	client          *http.Client
 	location        *time.Location
 
-	// filtering consul watch index per service
-	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest // Add in v.1.0.2
-	// aws session for publish message in sns
-	awsSession        *session.Session // Add in v.1.0.2
+	// filtering consul watch index per service (Add in v.1.0.2)
+	consulIndexFilter map[serviceName]map[consulIndex][]entity.PublishConsulChangeEventRequest
+
+	// aws session for publish message in sns (Add in v.1.0.2)
+	awsSession *session.Session
+
+	// redis client for cashing responses of services (Add in v.1.0.3)
+	redisClient *redis.Client
 }
 
 type BreakerConfig struct {
@@ -171,5 +176,11 @@ func Location(location *time.Location) FieldSetter {
 func AWSSession(awsSession *session.Session) FieldSetter {
 	return func(h *_default) {
 		h.awsSession = awsSession
+	}
+}
+
+func RedisClient(r *redis.Client) FieldSetter {
+	return func(h *_default) {
+		h.redisClient = r
 	}
 }
