@@ -25,6 +25,7 @@ services:
       - CONSUL_INDEX_HEADER=${CONSUL_INDEX_HEADER}
       - SNS_TOPIC_ARN=${SNS_TOPIC_ARN}    # add in v.1.0.2
       - CHANGE_CONSUL_SQS_GATEWAY=${CHANGE_CONSUL_SQS_GATEWAY} # add in v.1.0.2
+      - DELETE_REDIS_TOPIC=${DELETE_REDIS_TOPIC} # add in v.1.0.3
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
     deploy:
