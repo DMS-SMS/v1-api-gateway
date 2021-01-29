@@ -6,13 +6,21 @@ package subscriber
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/go-redis/redis/v8"
 	log "github.com/micro/go-micro/v2/logger"
 )
 
-var awsSession *session.Session
+var (
+	awsSession *session.Session
+	redisCli *redis.Client
+)
 
 func SetAwsSession(s *session.Session) {
 	awsSession = s
+}
+
+func SetRedisClient(r *redis.Client) {
+	redisCli = r
 }
 
 type _default struct {
