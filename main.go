@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"gateway/consul"
 	consulagent "gateway/consul/agent"
 	"gateway/entity/validator"
@@ -87,6 +89,9 @@ func main() {
 		Addr: fmt.Sprintf("%s:%d", redisConf.Host, redisConf.Port),
 		DB:   redisConf.DB,
 	})
+	if err := redisCli.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("unable to connect to redis server, connection config: %v, err: %v", redisConf, err)
+	}
 	defer func() {
 		_ = redisCli.Close()
 	}()
