@@ -153,9 +153,11 @@ func main() {
 		handler.AnnouncementService(announcementSrvCli),
 	)
 
-	// create subscriber & register listener (add in v.1.0.2)
+	// create subscriber & register aws sqs, redis listener (add in v.1.0.2)
 	consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
+	redisDeleteTopic := env.GetAndFatalIfNotExits("DELETE_REDIS_TOPIC")
 	subscriber.SetAwsSession(awsSession)
+	subscriber.SetRedisClient(redisCli)
 	defaultSubscriber := subscriber.Default()
 	defaultSubscriber.RegisterBeforeStart(
 		subscriber.SqsQueuePurger(consulChangeQueue),
@@ -165,6 +167,7 @@ func main() {
 			MaxNumberOfMessages: aws.Int64(10),
 			WaitTimeSeconds:     aws.Int64(2),
 		}),
+		subscriber.RedisListener(redisDeleteTopic, defaultHandler.DeleteWithKeyPattern, 5), // add in v.1.0.3
 	)
 
 	// create log file
