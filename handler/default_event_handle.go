@@ -20,7 +20,8 @@ func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
 	return
 }
 
-func (h *_default) DeleteWithKeyPattern(msg *redis.Message) (err error) {
+// delete all redis key with pattern sent from redis pub/sub
+func (h *_default) DeleteRedisKeyWithPattern(msg *redis.Message) (err error) {
 	keys, err := h.redisClient.Keys(ctx, msg.Payload).Result()
 	if err != nil {
 		err = errors.New(fmt.Sprintf("unable to execute redis KEYS cmd, err: %v", err))
