@@ -10,6 +10,15 @@ import (
 	"net/http"
 )
 
+func GinHResponseWriter() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer = &ginHResponseWriter{
+			ResponseWriter: c.Writer,
+		}
+		c.Next()
+	}
+}
+
 type ginHResponseWriter struct {
 	gin.ResponseWriter
 	json gin.H
