@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	clubproto "gateway/proto/golang/club"
 	jwtutil "gateway/tool/jwt"
@@ -56,32 +55,16 @@ func (h *_default) CreateNewClub(c *gin.Context) {
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available auth service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {

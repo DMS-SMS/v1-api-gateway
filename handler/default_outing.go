@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	outingproto "gateway/proto/golang/outing"
 	jwtutil "gateway/tool/jwt"
@@ -56,32 +55,16 @@ func (h *_default) CreateOuting(c *gin.Context) {
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -203,32 +186,16 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -351,32 +318,16 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 		return
 	}
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -498,32 +449,16 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 		return
 	}
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -673,32 +608,16 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 		return
 	}
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -1004,32 +923,16 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
@@ -1142,32 +1045,16 @@ func (h *_default) GetOutingByOCode(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
-	if err == nil { consulSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("SelectedNode", *selectedNode)) }
-	consulSpan.LogFields(log.Error(err))
-	consulSpan.Finish()
-
-	switch err {
-	case nil:
-		break
-	case consulagent.ErrAvailableNodeNotFound:
-		msg := "available outing service node is not exist in consul"
-		status, _code := http.StatusServiceUnavailable, code.AvailableServiceNotExist
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
-		return
-	default:
-		msg := fmt.Sprintf("unable to get service node from consul agent, err: %s", err.Error())
-		status, _code := http.StatusInternalServerError, 0
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
 		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
 		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
 
 	h.mutex.Lock()
 	if _, ok := h.breakers[selectedNode.Id]; !ok {
