@@ -27,16 +27,8 @@ func (h *_default) CreateOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -182,16 +174,8 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -351,16 +335,8 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -506,16 +482,8 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -664,16 +632,8 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -1015,16 +975,8 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -1187,16 +1139,8 @@ func (h *_default) GetOutingByOCode(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	consulSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)

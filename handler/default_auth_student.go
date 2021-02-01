@@ -29,16 +29,8 @@ func (h *_default) LoginStudentAuth(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling BadRequest
 	var receivedReq entity.LoginStudentAuthRequest
@@ -179,16 +171,8 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -335,16 +319,8 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -482,16 +458,8 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -639,16 +607,8 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
@@ -807,16 +767,8 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
 	// logic handling Unauthorized
 	var uuidClaims jwtutil.UUIDClaims
