@@ -2,12 +2,15 @@ package handler
 
 import (
 	"fmt"
+	consulagent "gateway/consul/agent"
 	"gateway/entity"
 	jwtutil "gateway/tool/jwt"
+	code "gateway/utils/code/golang"
 	respcode "gateway/utils/code/golang"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"net/http"
 	"strings"
 )
 
@@ -122,5 +125,19 @@ func (h *_default) checkIfValidRequest(c *gin.Context, bindReq interface{}) (ok 
 	}
 
 	ok = true
+	return
+}
+
+// this method is to get status & code & msg value from consul get node error
+// add in v.1.0.3
+func (h *_default) getStatusCodeFromConsulErr(err error) (status, _code int, msg string) {
+	switch err {
+	case consulagent.ErrAvailableNodeNotFound:
+		msg = "available service node is not exist in consul"
+		status, _code = http.StatusServiceUnavailable, code.AvailableServiceNotExist
+	default:
+		msg = fmt.Sprintf("unexpected error occurs while getting service node, err: %s", err.Error())
+		status, _code = http.StatusInternalServerError, 0
+	}
 	return
 }
