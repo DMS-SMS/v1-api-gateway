@@ -156,8 +156,6 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -168,8 +166,6 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
@@ -179,8 +175,6 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 	entry = entry.WithField("SelectedNode", *selectedNode)
@@ -214,8 +208,6 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -235,16 +227,12 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("ChangeStudentPW returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -256,18 +244,12 @@ func (h *_default) ChangeStudentPW(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
@@ -292,8 +274,6 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -302,8 +282,6 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 	entry = entry.WithField("SelectedNode", *selectedNode)
@@ -337,8 +315,6 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -358,16 +334,12 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("GetStudentInformWithUUID returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -383,18 +355,12 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
@@ -419,8 +385,6 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -432,8 +396,6 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
@@ -443,8 +405,6 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 	entry = entry.WithField("SelectedNode", *selectedNode)
@@ -477,8 +437,6 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -498,16 +456,12 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("GetStudentUUIDsWithInform returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -519,18 +473,12 @@ func (h *_default) GetStudentUUIDsWithInform(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
@@ -555,8 +503,6 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -568,8 +514,6 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
 		return
 	}
 	reqBytes, _ := json.Marshal(receivedReq)
@@ -579,8 +523,6 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 	entry = entry.WithField("SelectedNode", *selectedNode)
@@ -613,8 +555,6 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -634,16 +574,12 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("GetStudentInformsWithUUIDs returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -667,18 +603,12 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
@@ -703,8 +633,6 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -713,8 +641,6 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		status, _code, msg := h.getStatusCodeFromConsulErr(err)
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 	entry = entry.WithField("SelectedNode", *selectedNode)
@@ -748,8 +674,6 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -769,16 +693,12 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	default:
 		status, _code := http.StatusInternalServerError, 0
 		msg := fmt.Sprintf("GetParentWithStudentUUID returns unexpected type of error, err: %s", rpcErr.Error())
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 		return
 	}
 
@@ -793,18 +713,12 @@ func (h *_default) GetParentWithStudentUUID(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes)}).Info()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", _code).Finish()
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Error()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	default:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message}).Info()
-		topSpan.LogFields(log.Int("status", int(rpcResp.Status)), log.Int("code", int(rpcResp.Code)), log.String("message", rpcResp.Message))
-		topSpan.SetTag("status", rpcResp.Status).SetTag("code", rpcResp.Code).Finish()
 	}
 
 	return
