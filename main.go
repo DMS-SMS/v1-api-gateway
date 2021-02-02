@@ -225,7 +225,7 @@ func main() {
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
-	router.Use(corsHandler, middleware.SecurityFilter(), middleware.Correlator()) // middleware.DosDetector() 삭제
+	router.Use(corsHandler, middleware.SecurityFilter(), middleware.Correlator(), middleware.GinHResponseWriter()) // middleware.DosDetector() 삭제
 
 	// routing auth service API
 	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
