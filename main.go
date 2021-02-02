@@ -226,12 +226,12 @@ func main() {
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
 	router.Use(
-		corsHandler,
-		middleware.SecurityFilter(),
-		middleware.Correlator(),
-		// middleware.DosDetector(),
-		middleware.GinHResponseWriter(),
-		middleware.TracerSpanStarter(apiTracer),
+		corsHandler,                             // handle CORS request behind of AWS API Gateway
+		middleware.SecurityFilter(),             // filter if verified client with algorithm using aes256
+		middleware.Correlator(),                 // set X-Request-ID field in request header to express correlate
+		// middleware.DosDetector(),             // count request number per client IP to detect dos attack
+		middleware.GinHResponseWriter(),         // change ResponseWriter in *gin.Context to custom writer overriding that (add in v.1.0.3)
+		middleware.TracerSpanStarter(apiTracer), // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
 
 	// routing auth service API
