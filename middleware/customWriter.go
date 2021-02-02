@@ -67,6 +67,10 @@ func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 			resp[field] = int(value)
 		case uint64:
 			resp[field] = int(value)
+		case float32:
+			resp[field] = int(value)
+		case float64:
+			resp[field] = int(value)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("%s field should be converted into int type, current type: %s\n", field, reflect.TypeOf(value).String())
