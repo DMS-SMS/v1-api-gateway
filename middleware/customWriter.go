@@ -46,30 +46,42 @@ func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 
 	// status, code 필드 int 변환 가능 여부 확인 및 변환
 	shouldIntType := []string{"status", "code"}
-	for _, i := range shouldIntType {
-		switch value := resp[i].(type) {
+	for _, field := range shouldIntType {
+		switch value := resp[field].(type) {
 		case int:
 		case int8:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case int16:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case int32:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case int64:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case uint:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case uint8:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case uint16:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case uint32:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		case uint64:
-			resp[i] = int(value)
+			resp[field] = int(value)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Printf("%s field should be converted into int type, current type: %s\n", i, reflect.TypeOf(value).String())
+			log.Printf("%s field should be converted into int type, current type: %s\n", field, reflect.TypeOf(value).String())
+			return
+		}
+	}
+
+	// message 필드 string 타입인지 확인
+	shouldStringType := []string{"message"}
+	for _, field := range shouldStringType {
+		switch value := resp[field].(type) {
+		case string:
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Printf("%s field should be string type, current type: %s\n", field, reflect.TypeOf(value).String())
 			return
 		}
 	}
