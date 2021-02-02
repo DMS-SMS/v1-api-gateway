@@ -19,11 +19,11 @@ type tracerSpanStarter struct {
 func TracerSpanStarter(t opentracing.Tracer) gin.HandlerFunc {
 	return (&tracerSpanStarter{
 		tracer: t,
-	}).StartTracerSpan
+	}).startTracerSpan
 }
 
 // start, end top span of tracer & set log as response gotten by ResponseWriter
-func (s *tracerSpanStarter) StartTracerSpan(c *gin.Context) {
+func (s *tracerSpanStarter) startTracerSpan(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 	topSpan := s.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 	c.Set("TopSpan", topSpan)
