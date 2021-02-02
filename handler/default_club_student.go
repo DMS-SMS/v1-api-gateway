@@ -944,7 +944,7 @@ func (h *_default) GetAllClubFields(c *gin.Context) {
 
 	var rpcResp *clubproto.GetAllClubFieldsResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		authSrvSpan := h.tracer.StartSpan("GetRecruitmentUUIDWithClubUUID", opentracing.ChildOf(topSpan.Context()))
+		authSrvSpan := h.tracer.StartSpan("GetAllClubFields", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
