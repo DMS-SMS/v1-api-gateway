@@ -86,22 +86,11 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		return
 	})
 
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		return
-	}
-
 	switch rpcErr := err.(type) {
 	case nil:
 		break
 	case *errors.Error:
-		var status, _code int
-		var msg string
+		status, _code, msg := 0, 0, ""
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
 			msg = fmt.Sprintf("request time out for CreateNewStudent service, detail: %s", rpcErr.Detail)
@@ -114,8 +103,17 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
 	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("CreateNewStudent returns unexpected type of error, err: %s", rpcErr.Error())
+		status, _code, msg := 0, 0, ""
+		switch rpcErr {
+		case breaker.ErrBreakerOpen:
+			status, _code = http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			msg = fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		default:
+			status, _code = http.StatusInternalServerError, 0
+			msg = fmt.Sprintf("CreateNewStudent returns unexpected type of error, err: %s", rpcErr.Error())
+		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
@@ -203,22 +201,11 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 		return
 	})
 
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		return
-	}
-
 	switch rpcErr := err.(type) {
 	case nil:
 		break
 	case *errors.Error:
-		var status, _code int
-		var msg string
+		status, _code, msg := 0, 0, ""
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
 			msg = fmt.Sprintf("request time out for CreateNewTeacher service, detail: %s", rpcErr.Detail)
@@ -231,8 +218,17 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
 	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("CreateNewTeacher returns unexpected type of error, err: %s", rpcErr.Error())
+		status, _code, msg := 0, 0, ""
+		switch rpcErr {
+		case breaker.ErrBreakerOpen:
+			status, _code = http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			msg = fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		default:
+			status, _code = http.StatusInternalServerError, 0
+			msg = fmt.Sprintf("CreateNewTeacher returns unexpected type of error, err: %s", rpcErr.Error())
+		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
@@ -320,22 +316,11 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 		return
 	})
 
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		return
-	}
-
 	switch rpcErr := err.(type) {
 	case nil:
 		break
 	case *errors.Error:
-		var status, _code int
-		var msg string
+		status, _code, msg := 0, 0, ""
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
 			msg = fmt.Sprintf("request time out for CreateNewParent service, detail: %s", rpcErr.Detail)
@@ -348,8 +333,17 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
 	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("CreateNewParent returns unexpected type of error, err: %s", rpcErr.Error())
+		status, _code, msg := 0, 0, ""
+		switch rpcErr {
+		case breaker.ErrBreakerOpen:
+			status, _code = http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			msg = fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		default:
+			status, _code = http.StatusInternalServerError, 0
+			msg = fmt.Sprintf("CreateNewParent returns unexpected type of error, err: %s", rpcErr.Error())
+		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
@@ -425,22 +419,11 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 		return
 	})
 
-	if err == breaker.ErrBreakerOpen {
-		msg := fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
-		status, _code := http.StatusServiceUnavailable, code.CircuitBreakerOpen
-		_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
-		time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
-		return
-	}
-
 	switch rpcErr := err.(type) {
 	case nil:
 		break
 	case *errors.Error:
-		var status, _code int
-		var msg string
+		status, _code, msg := 0, 0, ""
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
 			msg = fmt.Sprintf("request time out for LoginAdminAuth service, detail: %s", rpcErr.Detail)
@@ -453,8 +436,17 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
 	default:
-		status, _code := http.StatusInternalServerError, 0
-		msg := fmt.Sprintf("LoginAdminAuth returns unexpected type of error, err: %s", rpcErr.Error())
+		status, _code, msg := 0, 0, ""
+		switch rpcErr {
+		case breaker.ErrBreakerOpen:
+			status, _code = http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			msg = fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		default:
+			status, _code = http.StatusInternalServerError, 0
+			msg = fmt.Sprintf("LoginAdminAuth returns unexpected type of error, err: %s", rpcErr.Error())
+		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
 		return
