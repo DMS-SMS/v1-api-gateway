@@ -945,7 +945,7 @@ func (h *_default) GetOutingByOCode(c *gin.Context) {
 
 	var rpcResp *outingproto.GetOutingByOCodeResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		outingSrvSpan := h.tracer.StartSpan("GetOutingInform", opentracing.ChildOf(topSpan.Context()))
+		outingSrvSpan := h.tracer.StartSpan("GetOutingByOCode", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", outingSrvSpan.Context().(jaeger.SpanContext).String())
