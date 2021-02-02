@@ -24,8 +24,12 @@ import (
 
 func (h *_default) AddClubMember(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -156,8 +160,12 @@ func (h *_default) AddClubMember(c *gin.Context) {
 
 func (h *_default) DeleteClubMember(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -276,8 +284,12 @@ func (h *_default) DeleteClubMember(c *gin.Context) {
 
 func (h *_default) ChangeClubLeader(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -408,8 +420,12 @@ func (h *_default) ChangeClubLeader(c *gin.Context) {
 
 func (h *_default) ModifyClubInform(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -540,8 +556,12 @@ func (h *_default) ModifyClubInform(c *gin.Context) {
 
 func (h *_default) DeleteClubWithUUID(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -659,8 +679,12 @@ func (h *_default) DeleteClubWithUUID(c *gin.Context) {
 
 func (h *_default) RegisterRecruitment(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -790,8 +814,12 @@ func (h *_default) RegisterRecruitment(c *gin.Context) {
 
 func (h *_default) ModifyRecruitment(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -922,8 +950,12 @@ func (h *_default) ModifyRecruitment(c *gin.Context) {
 
 func (h *_default) DeleteRecruitment(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 

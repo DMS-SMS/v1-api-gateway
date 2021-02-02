@@ -24,8 +24,12 @@ import (
 
 func (h *_default) CreateOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -155,8 +159,12 @@ func (h *_default) CreateOuting(c *gin.Context) {
 
 func (h *_default) GetStudentOutings(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -300,8 +308,12 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 
 func (h *_default) GetOutingInform(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -431,8 +443,12 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 
 func (h *_default) GetCardAboutOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -565,8 +581,12 @@ func (h *_default) GetCardAboutOuting(c *gin.Context) {
 
 func (h *_default) TakeActionInOuting(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -892,8 +912,12 @@ func (h *_default) TakeActionInOuting(c *gin.Context) {
 
 func (h *_default) GetOutingWithFilter(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
@@ -1040,8 +1064,12 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 
 func (h *_default) GetOutingByOCode(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 

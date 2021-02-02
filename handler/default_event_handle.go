@@ -20,7 +20,11 @@ func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
 	return
 }
 
-// delete all redis key with pattern sent from redis pub/sub
+func (h *_default) DeleteRedisKeyAssociatedWithResource(message *redis.Message) (err error) {
+	return 
+}
+
+// delete all redis key with pattern sent from parameter
 func (h *_default) deleteRedisKeyWithPattern(pattern string) (err error) {
 	keys, err := h.redisClient.Keys(ctx, pattern).Result()
 	if err != nil {
@@ -36,3 +40,8 @@ func (h *_default) deleteRedisKeyWithPattern(pattern string) (err error) {
 	log.Infof("delete all redis key with pattern!, pattern: %s, matched key num: %d", pattern, len(keys))
 	return
 }
+
+// sey new redis key with key name & value sent from redis pub/sub
+//func (h *_default) SetNewRedisKey(msg *redis.Message) (err error) {
+//
+//}
