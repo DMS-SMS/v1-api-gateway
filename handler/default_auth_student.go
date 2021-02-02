@@ -500,9 +500,8 @@ func (h *_default) GetStudentInformsWithUUIDs(c *gin.Context) {
 
 	// logic handling BadRequest
 	var receivedReq entity.GetStudentInformsWithUUIDsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && !reflect.DeepEqual(receivedReq, entity.GetStudentUUIDsWithInformRequest{}) {
+	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
 	} else {
-		if msg == "" { msg = "you must set up at least one parameter" }
 		reqBytes, _ := json.Marshal(receivedReq)
 		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
