@@ -231,6 +231,7 @@ func main() {
 		middleware.Correlator(),
 		// middleware.DosDetector(),
 		middleware.GinHResponseWriter(),
+		middleware.TracerSpanStarter(apiTracer),
 	)
 
 	// routing auth service API
