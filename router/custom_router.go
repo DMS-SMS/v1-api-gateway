@@ -4,6 +4,7 @@
 package router
 
 import (
+	"github.com/gin-gonic/gin"
 	"log"
 	"reflect"
 )
@@ -24,4 +25,11 @@ func (r *customRouter) Run(addr ...string) error {
 	}
 
 	return r.Engine.Run(addr...)
+}
+
+// method that return custom router group having method declared in custom_group.go
+func (r *customRouter) CustomGroup(relativePath string, handlers ...gin.HandlerFunc) *customRouterGroup {
+	return &customRouterGroup{
+		RouterGroup: r.RouterGroup.Group(relativePath, handlers...),
+	}
 }
