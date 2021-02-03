@@ -22,7 +22,8 @@ func New(baseRouter *gin.Engine) (router *customRouter) {
 	return
 }
 
-// register closure function to execute before run
-func (r *customRouter) RegisterBeforeRun(fn ...func() error) {
-	r.beforeRun = append(r.beforeRun, fn...)
+// customRouterGroup basically embedding *gin.RouterGroup
+// Additional function is routing handler wrapped with access token handler, etc ...
+type customRouterGroup struct {
+	*gin.RouterGroup
 }
