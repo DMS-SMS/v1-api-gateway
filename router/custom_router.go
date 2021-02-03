@@ -8,6 +8,11 @@ import (
 	"reflect"
 )
 
+// register closure function to execute before run
+func (r *customRouter) RegisterBeforeRun(fn ...func() error) {
+	r.beforeRun = append(r.beforeRun, fn...)
+}
+
 // overriding run method
 // add executing function before server run
 func (r *customRouter) Run(addr ...string) error {
