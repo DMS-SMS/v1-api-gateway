@@ -29,5 +29,5 @@ func New(baseRouter *gin.Engine) (router *customRouter) {
 // Additional function is routing handler wrapped with access token handler, etc ...
 type customRouterGroup struct {
 	*gin.RouterGroup
-	validator *validator.Validate
+	Validator *validator.Validate
 }

@@ -32,6 +32,6 @@ func (r *customRouter) Run(addr ...string) error {
 func (r *customRouter) CustomGroup(relativePath string, handlers ...gin.HandlerFunc) *customRouterGroup {
 	return &customRouterGroup{
 		RouterGroup: r.RouterGroup.Group(relativePath, handlers...),
-		validator:   validator.New(),
+		Validator:   validator.New(),
 	}
 }
