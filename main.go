@@ -235,7 +235,7 @@ func main() {
 	)
 
 	// routing auth service API
-	authRouter := router.Group("/", middleware.LogEntrySetter(authLogger))
+	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
 	authRouter.POST("/v1/students", defaultHandler.CreateNewStudent)
 	authRouter.POST("/v1/teachers", defaultHandler.CreateNewTeacher)
@@ -261,7 +261,7 @@ func main() {
 	authRouter.GET("/v1/parents/uuid/:parent_uuid/children", defaultHandler.GetChildrenInformsWithUUID)
 
 	// routing club service API
-	clubRouter := router.Group("/", middleware.LogEntrySetter(clubLogger))
+	clubRouter := router.CustomGroup("/", middleware.LogEntrySetter(clubLogger))
 	// club service api for admin
 	clubRouter.POST("/v1/clubs", defaultHandler.CreateNewClub)
 	// club service api for student
@@ -287,7 +287,7 @@ func main() {
 	clubRouter.DELETE("/v1/recruitments/uuid/:recruitment_uuid", defaultHandler.DeleteRecruitment)
 
 	// routing outing service API
-	outingRouter := router.Group("/", middleware.LogEntrySetter(outingLogger))
+	outingRouter := router.CustomGroup("/", middleware.LogEntrySetter(outingLogger))
 	outingRouter.POST("/v1/outings", defaultHandler.CreateOuting)
 	outingRouter.GET("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings)
 	outingRouter.GET("/v1/outings/uuid/:outing_uuid", defaultHandler.GetOutingInform)
@@ -297,7 +297,7 @@ func main() {
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
 
 	// routing schedule service API
-	scheduleRouter := router.Group("/", middleware.LogEntrySetter(scheduleLogger))
+	scheduleRouter := router.CustomGroup("/", middleware.LogEntrySetter(scheduleLogger))
 	scheduleRouter.POST("/v1/schedules", defaultHandler.CreateSchedule)
 	scheduleRouter.GET("/v1/schedules/years/:year/months/:month", defaultHandler.GetSchedule)
 	scheduleRouter.GET("/v1/time-tables/years/:year/months/:month/days/:day", defaultHandler.GetTimeTable)
@@ -305,7 +305,7 @@ func main() {
 	scheduleRouter.DELETE("/v1/schedules/uuid/:schedule_uuid", defaultHandler.DeleteSchedule)
 
 	// routing announcement service API
-	announcementRouter := router.Group("/", middleware.LogEntrySetter(announcementLogger))
+	announcementRouter := router.CustomGroup("/", middleware.LogEntrySetter(announcementLogger))
 	announcementRouter.POST("/v1/announcements", defaultHandler.CreateAnnouncement)
 	announcementRouter.GET("/v1/announcements/types/:type", defaultHandler.GetAnnouncements)
 	announcementRouter.GET("/v1/announcements/uuid/:announcement_uuid", defaultHandler.GetAnnouncementDetail)
@@ -316,7 +316,7 @@ func main() {
 	announcementRouter.GET("/v1/announcements/writer-uuid/:writer_uuid", defaultHandler.GetMyAnnouncements)
 
 	// routing open-api agent API
-	openApiRouter := router.Group("/", middleware.LogEntrySetter(openApiLogger))
+	openApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GET("/naver-open-api/search/local", defaultHandler.GetPlaceWithNaverOpenAPI)
 
 	// run server
