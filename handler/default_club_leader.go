@@ -33,16 +33,10 @@ func (h *_default) AddClubMember(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.AddClubMemberRequest
@@ -149,16 +143,10 @@ func (h *_default) DeleteClubMember(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
 	if err != nil {
@@ -255,16 +243,10 @@ func (h *_default) ChangeClubLeader(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.ChangeClubLeaderRequest
@@ -371,16 +353,10 @@ func (h *_default) ModifyClubInform(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.ModifyClubInformRequest
@@ -487,16 +463,10 @@ func (h *_default) DeleteClubWithUUID(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
 	if err != nil {
@@ -592,16 +562,10 @@ func (h *_default) RegisterRecruitment(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.RegisterRecruitmentRequest
@@ -707,16 +671,10 @@ func (h *_default) ModifyRecruitment(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.ModifyRecruitmentRequest
@@ -823,16 +781,10 @@ func (h *_default) DeleteRecruitment(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
 	if err != nil {
