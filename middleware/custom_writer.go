@@ -22,7 +22,8 @@ func GinHResponseWriter() gin.HandlerFunc {
 
 type ginHResponseWriter struct {
 	gin.ResponseWriter
-	json gin.H
+	json    gin.H      // save gin.H json response that sent in handler
+	written bool       // check if response written by this response writer
 }
 
 // save response(value of gin.H type) in field of ginHResponseWriter
