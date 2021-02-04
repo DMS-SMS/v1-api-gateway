@@ -39,3 +39,24 @@ func (g *customRouterGroup) PUTWithAuth(relativePath string, handlers ...gin.Han
 	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
 	return g.PUT(relativePath, handlers...)
 }
+
+// finally call origin POST, GET, DELETE, PATCH, PUT method of RouterGroup
+func (g *customRouterGroup) post(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return g.RouterGroup.POST(relativePath, append([]gin.HandlerFunc{handler}, handlers...)...)
+}
+
+func (g *customRouterGroup) get(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return g.RouterGroup.GET(relativePath, append([]gin.HandlerFunc{handler}, handlers...)...)
+}
+
+func (g *customRouterGroup) delete(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return g.RouterGroup.DELETE(relativePath, append([]gin.HandlerFunc{handler}, handlers...)...)
+}
+
+func (g *customRouterGroup) patch(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return g.RouterGroup.PATCH(relativePath, append([]gin.HandlerFunc{handler}, handlers...)...)
+}
+
+func (g *customRouterGroup) put(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	return g.RouterGroup.PUT(relativePath, append([]gin.HandlerFunc{handler}, handlers...)...)
+}
