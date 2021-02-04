@@ -16,6 +16,32 @@ func (g *customRouterGroup) CustomGroup(relativePath string, handlers ...gin.Han
 	}
 }
 
+// add request validator middleware in front of handlers before routing
+func (g *customRouterGroup) POST(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.RequestValidator(g.Validator, handler)}
+	return g.post(relativePath, handler, append(prefixHandlers, handler)...)
+}
+
+func (g *customRouterGroup) GET(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.RequestValidator(g.Validator, handler)}
+	return g.get(relativePath, handler, append(prefixHandlers, handler)...)
+}
+
+func (g *customRouterGroup) DELETE(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.RequestValidator(g.Validator, handler)}
+	return g.delete(relativePath, handler, append(prefixHandlers, handler)...)
+}
+
+func (g *customRouterGroup) PATCH(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.RequestValidator(g.Validator, handler)}
+	return g.patch(relativePath, handler, append(prefixHandlers, handler)...)
+}
+
+func (g *customRouterGroup) PUT(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.RequestValidator(g.Validator, handler)}
+	return g.put(relativePath, handler, append(prefixHandlers, handler)...)
+}
+
 // add authenticator & request validator middleware in front of handlers before routing
 func (g *customRouterGroup) POSTWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
 	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
