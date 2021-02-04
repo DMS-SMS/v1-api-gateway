@@ -4,6 +4,7 @@
 package middleware
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -12,4 +13,18 @@ var globalValidator *requestValidator
 
 type requestValidator struct {
 	validator *validator.Validate
+}
+
+func RequestValidator(v *validator.Validate, h gin.HandlerFunc) gin.HandlerFunc {
+	if globalValidator == nil || globalValidator.validator != v {
+		globalValidator = &requestValidator{v}
+	}
+
+	return globalValidator.RequestValidator(h)
+}
+
+func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+	}
 }
