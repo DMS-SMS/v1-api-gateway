@@ -33,16 +33,10 @@ func (h *_default) CreateSchedule(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.CreateScheduleRequest
@@ -148,16 +142,10 @@ func (h *_default) GetSchedule(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.GetScheduleRequest
@@ -272,16 +260,10 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.GetTimeTableRequest
@@ -389,16 +371,10 @@ func (h *_default) UpdateSchedule(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	// logic handling BadRequest
 	var receivedReq entity.UpdateScheduleRequest
@@ -505,16 +481,10 @@ func (h *_default) DeleteSchedule(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)
 	if err != nil {

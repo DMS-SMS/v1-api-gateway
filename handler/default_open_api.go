@@ -29,16 +29,10 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		return
-	}
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	var limited bool
 	h.mutex.Lock()
