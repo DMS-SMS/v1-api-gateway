@@ -16,29 +16,30 @@ func (g *customRouterGroup) CustomGroup(relativePath string, handlers ...gin.Han
 	}
 }
 
-func (g *customRouterGroup) POSTWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
-	return g.POST(relativePath, handlers...)
+// add authenticator & request validator middleware in front of handlers before routing
+func (g *customRouterGroup) POSTWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
+	return g.post(relativePath, handler, append(prefixHandlers, handler)...)
 }
 
-func (g *customRouterGroup) GETWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
-	return g.GET(relativePath, handlers...)
+func (g *customRouterGroup) GETWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
+	return g.get(relativePath, handler, append(prefixHandlers, handler)...)
 }
 
-func (g *customRouterGroup) DELETEWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
-	return g.DELETE(relativePath, handlers...)
+func (g *customRouterGroup) DELETEWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
+	return g.delete(relativePath, handler, append(prefixHandlers, handler)...)
 }
 
-func (g *customRouterGroup) PATCHWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
-	return g.PATCH(relativePath, handlers...)
+func (g *customRouterGroup) PATCHWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
+	return g.patch(relativePath, handler, append(prefixHandlers, handler)...)
 }
 
-func (g *customRouterGroup) PUTWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
-	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
-	return g.PUT(relativePath, handlers...)
+func (g *customRouterGroup) PUTWithAuth(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+	prefixHandlers := []gin.HandlerFunc{middleware.Authenticator(), middleware.RequestValidator(g.Validator, handler)}
+	return g.put(relativePath, handler, append(prefixHandlers, handler)...)
 }
 
 // finally call origin POST, GET, DELETE, PATCH, PUT method of RouterGroup
