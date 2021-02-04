@@ -203,21 +203,21 @@ func main() {
 
 	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
-	router := customrouter.New(gin.Default())
-	router.RegisterBeforeRun(
+	globalRouter := customrouter.New(gin.Default())
+	globalRouter.RegisterBeforeRun(
 		defaultHandler.ConsulChangeEventPublisher(),
 		consulAgent.ChangeAllServiceNodes,
 		defaultSubscriber.StartListening,
 	)
 
 	// routing ping & pong API
-	healthCheckRouter := router.Group("/")
+	healthCheckRouter := globalRouter.Group("/")
 	healthCheckRouter.GET("/ping", func(c *gin.Context) { // add in v.1.0.2
 		c.JSON(http.StatusOK, "pong")
 	})
 
 	// routing API to use in consul watch
-	consulWatchRouter := router.Group("/")
+	consulWatchRouter := globalRouter.Group("/")
 	consulWatchRouter.POST("/events/types/consul-change", defaultHandler.PublishConsulChangeEvent) // add in v.1.0.2
 
 	// add middleware handler
@@ -225,7 +225,7 @@ func main() {
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
 	corsHandler := cors.New(corsConfig)
-	router.Use(
+	globalRouter.Use(
 		corsHandler,                             // handle CORS request behind of AWS API Gateway
 		middleware.SecurityFilter(),             // filter if verified client with algorithm using aes256
 		middleware.Correlator(),                 // set X-Request-ID field in request header to express correlate
@@ -320,5 +320,5 @@ func main() {
 	openApiRouter.GET("/naver-open-api/search/local", defaultHandler.GetPlaceWithNaverOpenAPI)
 
 	// run server
-	log.Fatal(router.Run(":80"))
+	log.Fatal(globalRouter.Run(":80"))
 }
