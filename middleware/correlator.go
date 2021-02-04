@@ -6,10 +6,12 @@ import (
 )
 
 func Correlator() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		xReqId := uuid.New().String()
-		c.Request.Header.Set("X-Request-Id", xReqId)
-		c.Header("X-Request-Id", xReqId)
-		c.Next()
-	}
+	return correlate
+}
+
+func correlate(c *gin.Context) {
+	xReqId := uuid.New().String()
+	c.Request.Header.Set("X-Request-Id", xReqId)
+	c.Header("X-Request-Id", xReqId)
+	c.Next()
 }
