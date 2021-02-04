@@ -34,6 +34,11 @@ func (s *tracerSpanStarter) startTracerSpan(c *gin.Context) {
 	status, _code, msg := 0, 0, ""
 	switch w := c.Writer.(type) {
 	case *ginHResponseWriter:
+		if !w.written {
+			topSpan.LogFields(log.Object("response", w.json))
+			topSpan.Finish()
+			return
+		}
 		status = w.json["status"].(int)
 		_code = w.json["code"].(int)
 		msg = w.json["message"].(string)
