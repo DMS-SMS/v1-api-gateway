@@ -29,16 +29,16 @@ type ginHResponseWriter struct {
 // save response(value of gin.H type) in field of ginHResponseWriter
 func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 	resp := gin.H{}
-	if err := json.Unmarshal(b, &resp); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("error occurs while unmarshal response json to obj in custom response writer, err: %v\n", err)
-		return
+	if err := json.Unmarshal(b, &resp); err != nil || reflect.DeepEqual(resp, gin.H{}) {
+		w.written = false
+		return w.ResponseWriter.Write(b)
 	}
 
 	// status, code, message 필드 존재 여부 확인
 	shouldContain := []string{"status", "code", "message"}
 	for _, contain := range shouldContain {
 		if _, ok := resp[contain]; !ok {
+			w.written = false
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("json in response body have to contain %s, resp json: %v\n", contain, resp)
 			return
@@ -73,6 +73,7 @@ func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 		case float64:
 			resp[field] = int(value)
 		default:
+			w.written = false
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("%s field should be converted into int type, current type: %s\n", field, reflect.TypeOf(value).String())
 			return
@@ -85,12 +86,14 @@ func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 		switch value := resp[field].(type) {
 		case string:
 		default:
+			w.written = false
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("%s field should be string type, current type: %s\n", field, reflect.TypeOf(value).String())
 			return
 		}
 	}
 
+	w.written = true
 	w.json = resp
 	return w.ResponseWriter.Write(b)
 }
