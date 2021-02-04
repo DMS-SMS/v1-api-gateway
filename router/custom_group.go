@@ -12,6 +12,7 @@ import (
 func (g *customRouterGroup) CustomGroup(relativePath string, handlers ...gin.HandlerFunc) *customRouterGroup {
 	return &customRouterGroup{
 		RouterGroup: g.RouterGroup.Group(relativePath, handlers...),
+		Validator:   g.Validator,
 	}
 }
 
