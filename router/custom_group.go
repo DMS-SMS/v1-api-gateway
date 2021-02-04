@@ -4,6 +4,7 @@
 package router
 
 import (
+	"gateway/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,4 +13,29 @@ func (g *customRouterGroup) CustomGroup(relativePath string, handlers ...gin.Han
 	return &customRouterGroup{
 		RouterGroup: g.RouterGroup.Group(relativePath, handlers...),
 	}
+}
+
+func (g *customRouterGroup) POSTWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
+	return g.POST(relativePath, handlers...)
+}
+
+func (g *customRouterGroup) GETWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
+	return g.GET(relativePath, handlers...)
+}
+
+func (g *customRouterGroup) DELETEWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
+	return g.DELETE(relativePath, handlers...)
+}
+
+func (g *customRouterGroup) PATCHWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
+	return g.PATCH(relativePath, handlers...)
+}
+
+func (g *customRouterGroup) PUTWithAuth(relativePath string, handlers ...gin.HandlerFunc) gin.IRoutes {
+	handlers = append([]gin.HandlerFunc{middleware.Authenticator()}, handlers...)
+	return g.PUT(relativePath, handlers...)
 }
