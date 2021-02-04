@@ -220,18 +220,21 @@ func main() {
 	consulWatchRouter := globalRouter.Group("/")
 	consulWatchRouter.POST("/events/types/consul-change", defaultHandler.PublishConsulChangeEvent) // add in v.1.0.2
 
-	// add middleware handler
+	// register middleware in global router & handler
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "authorization", "Request-Security")
-	corsHandler := cors.New(corsConfig)
+	// run middleware before routing matching
 	globalRouter.Use(
-		corsHandler,                             // handle CORS request behind of AWS API Gateway
-		middleware.SecurityFilter(),             // filter if verified client with algorithm using aes256
-		middleware.Correlator(),                 // set X-Request-ID field in request header to express correlate
-		// middleware.DosDetector(),             // count request number per client IP to detect dos attack
-		middleware.GinHResponseWriter(),         // change ResponseWriter in *gin.Context to custom writer overriding that (add in v.1.0.3)
-		middleware.TracerSpanStarter(apiTracer), // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
+		cors.New(corsConfig),         // handle CORS request behind of AWS API Gateway
+		middleware.SecurityFilter(),  // filter if verified client with algorithm using aes256
+		middleware.Correlator(),      // set X-Request-ID field in request header to express correlate
+		// middleware.DosDetector(),  // count request number per client IP to detect dos attack
+	)
+	// run middleware after successful routing matching
+	router := globalRouter.CustomGroup("/",
+		middleware.GinHResponseWriter(),          // change ResponseWriter in *gin.Context to custom writer overriding that (add in v.1.0.3)
+		middleware.TracerSpanStarter(apiTracer),  // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
 
 	// routing auth service API
