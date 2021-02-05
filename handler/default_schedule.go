@@ -38,15 +38,9 @@ func (h *_default) CreateSchedule(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateScheduleRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateScheduleRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)
@@ -147,15 +141,9 @@ func (h *_default) GetSchedule(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetScheduleRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetScheduleRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)
@@ -265,15 +253,9 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetTimeTableRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetTimeTableRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)
@@ -376,15 +358,9 @@ func (h *_default) UpdateSchedule(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.UpdateScheduleRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.UpdateScheduleRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)

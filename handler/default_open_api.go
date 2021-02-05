@@ -53,15 +53,9 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		return
 	}
 
-	// logic handling BadRequest
-	var receivedReq entity.GetPlaceWithNaverOpenAPIRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetPlaceWithNaverOpenAPIRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	openApiSpan := h.tracer.StartSpan("GetPlaceWithNaverOpenAPI", opentracing.ChildOf(topSpan.Context()))

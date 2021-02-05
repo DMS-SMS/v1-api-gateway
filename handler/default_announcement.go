@@ -38,15 +38,9 @@ func (h *_default) CreateAnnouncement(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateAnnouncementRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateAnnouncementRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)
@@ -147,15 +141,9 @@ func (h *_default) GetAnnouncements(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetAnnouncementsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetAnnouncementsRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)
@@ -371,15 +359,9 @@ func (h *_default) UpdateAnnouncement(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.UpdateAnnouncementRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.UpdateAnnouncementRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)
@@ -678,15 +660,9 @@ func (h *_default) SearchAnnouncements(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.SearchAnnouncementsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.SearchAnnouncementsRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)
@@ -801,15 +777,9 @@ func (h *_default) GetMyAnnouncements(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetMyAnnouncementsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetMyAnnouncementsRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)

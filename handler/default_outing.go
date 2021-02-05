@@ -38,15 +38,9 @@ func (h *_default) CreateOuting(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateOutingRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateOutingRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
@@ -147,15 +141,9 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetStudentOutingsRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetStudentOutingsRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
@@ -792,15 +780,9 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetOutingWithFilterRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetOutingWithFilterRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
