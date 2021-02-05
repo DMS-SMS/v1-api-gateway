@@ -16,6 +16,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("unable to read dir, dir: %s\n", entityDir)
 	}
+
 	var targetFiles []string
 	for _, f := range files {
 		if regexp.MustCompile("^request_.*.go$").MatchString(f.Name()) {
@@ -26,4 +27,13 @@ func init() {
 	for _, target := range targetFiles {
 		globalInstance.registerInstanceFromFile(target)
 	}
+
+	// check if all request instance samples are registered in request instance registry
+	for sample := range requestSamples {
+		if _, err := globalInstance.getInstance(sample); err != nil {
+			log.Fatalf("some reqeust sample didn't register in request entity registry, sample name: %s\n", sample)
+		}
+	}
+
+	log.Println("Finished to initialize request entity instance in registry!!")
 }
