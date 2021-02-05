@@ -4,8 +4,14 @@
 package middleware
 
 import (
+	"fmt"
+	"gateway/entity"
+	entityregistry "gateway/entity/registry"
+	code "gateway/utils/code/golang"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"net/http"
 	"reflect"
 	"runtime"
 	"strings"
@@ -32,6 +38,70 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 	fName := strings.TrimSuffix(fNames[2], "-fm")
 
 	return func(c *gin.Context) {
+		req := entityregistry.GetInstance(fName + "Request")
+		respFor400 := gin.H{
+			"status":  http.StatusBadRequest,
+			"code":    0,
+			"message": "",
+		}
 
+		switch req.(type) {
+		case entity.GetScheduleRequest, entity.GetTimeTableRequest:
+			if err := c.ShouldBindUri(req); err != nil {
+				respFor400["code"] = code.FailToBindRequestToStruct
+				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
+		case entity.GetClubsSortByUpdateTimeRequest, entity.GetRecruitmentsSortByCreateTimeRequest, entity.GetStudentOutingsRequest,
+			entity.GetOutingWithFilterRequest, entity.GetAnnouncementsRequest, entity.GetPlaceWithNaverOpenAPIRequest,
+			entity.GetStudentUUIDsWithInformRequest, entity.GetTeacherUUIDsWithInformRequest, entity.GetParentUUIDsWithInformRequest:
+			if err := c.ShouldBindQuery(req); err != nil {
+				respFor400["code"] = code.FailToBindRequestToStruct
+				respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
+		default:
+			switch c.ContentType() {
+			case "multipart/form-data":
+				if err := c.ShouldBindWith(req, binding.FormMultipart); err != nil {
+					respFor400["code"] = code.FailToBindRequestToStruct
+					respFor400["message"] = fmt.Sprintf("failed to bind multipart request into golang struct, err: %v", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+					return
+				}
+			case "application/json":
+				if err := c.ShouldBindJSON(req); err != nil {
+					respFor400["code"] = code.FailToBindRequestToStruct
+					respFor400["message"] = fmt.Sprintf("failed to bind json request into golang struct, err: %v", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+					return
+				}
+			case "":
+				if err := c.ShouldBindWith(req, binding.Form); err != nil {
+					respFor400["code"] = code.FailToBindRequestToStruct
+					respFor400["message"] = fmt.Sprintf("failed to bind request into golang struct, err: %v", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+					return
+				}
+				break
+			default:
+				respFor400["code"] = code.UnsupportedContentType
+				respFor400["message"] = fmt.Sprintf("%s is an unsupported content type", c.ContentType())
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
+		}
+
+		if err := r.validator.Struct(req); err != nil {
+			respFor400["code"] = code.IntegrityInvalidRequest
+			respFor400["message"] = fmt.Sprintf("request is not valid for integrity constraints, err: %v", err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+			return
+		}
+
+		c.Set("Request", req)
+		c.Next()
 	}
 }
