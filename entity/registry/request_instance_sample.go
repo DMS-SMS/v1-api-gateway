@@ -41,10 +41,7 @@ var requestSamples = map[string]interface{}{
 	"RegisterRecruitmentRequest": entity.RegisterRecruitmentRequest{},
 	"ModifyRecruitmentRequest": entity.ModifyRecruitmentRequest{},
 
-	// in "entity/request_event.go"
-	"PublishConsulChangeEventRequest": entity.PublishConsulChangeEventRequest{},
-
-	// in "entity/request_opne_api.go"
+	// in "entity/request_open_api.go"
 	"GetPlaceWithNaverOpenAPIRequest": entity.GetPlaceWithNaverOpenAPIRequest{},
 
 	// in "entity/request_outing.go"
