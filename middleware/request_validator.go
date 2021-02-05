@@ -105,6 +105,16 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
+		switch req.(type) {
+		case *entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest:
+			emptyValue := reflect.New(reflect.TypeOf(req).Elem()).Elem().Interface()
+			if reflect.DeepEqual(reflect.ValueOf(req).Elem().Interface(), emptyValue) {
+				respFor400["code"] = code.IntegrityInvalidRequest
+				respFor400["message"] = "you must set up at least one parameter"
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+			}
+		}
+
 		c.Set("Request", req)
 		c.Next()
 	}
