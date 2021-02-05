@@ -39,15 +39,9 @@ func (h *_default) CreateNewStudent(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateNewStudentRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && receivedReq.Profile != nil {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateNewStudentRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
@@ -148,15 +142,9 @@ func (h *_default) CreateNewTeacher(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateNewTeacherRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateNewTeacherRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
@@ -257,15 +245,9 @@ func (h *_default) CreateNewParent(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.CreateNewParentRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.CreateNewParentRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
@@ -361,15 +343,9 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling BadRequest
-	var receivedReq entity.LoginAdminAuthRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.LoginAdminAuthRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)

@@ -20,7 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	"net/http"
-	"reflect"
 	"time"
 )
 
@@ -35,15 +34,9 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 	inAdvanceEntry, _ := c.Get("RequestLogEntry")
 	entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-	// logic handling BadRequest
-	var receivedReq entity.LoginTeacherAuthRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.LoginTeacherAuthRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
@@ -151,15 +144,9 @@ func (h *_default) ChangeTeacherPW(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.ChangeTeacherPWRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.ChangeTeacherPWRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
@@ -364,16 +351,9 @@ func (h *_default) GetTeacherUUIDsWithInform(c *gin.Context) {
 	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
-	// logic handling BadRequest
-	var receivedReq entity.GetTeacherUUIDsWithInformRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok && !reflect.DeepEqual(receivedReq, entity.GetTeacherUUIDsWithInformRequest{}) {
-	} else {
-		if msg == "" { msg = "you must set up at least one parameter" }
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetTeacherUUIDsWithInformRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
