@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"log"
+	"reflect"
 	"regexp"
 )
 
@@ -22,7 +23,7 @@ func GetInstance(key string) interface{} {
 
 // get instance with key from registry
 func (ri *requestInstance) getInstance(key string) interface{} {
-	return (*ri)[key]
+	return reflect.New(reflect.TypeOf((*ri)[key])).Interface()
 }
 
 // register new request instance with parsing struct in file
