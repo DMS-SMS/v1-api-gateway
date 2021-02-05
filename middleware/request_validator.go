@@ -38,7 +38,11 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 	fName := strings.TrimSuffix(fNames[2], "-fm")
 
 	return func(c *gin.Context) {
-		req := entityregistry.GetInstance(fName + "Request")
+		req, ok := entityregistry.GetInstance(fName + "Request")
+		if !ok {
+			c.Next()
+			return
+		}
 		respFor400 := gin.H{
 			"status":  http.StatusBadRequest,
 			"code":    0,
