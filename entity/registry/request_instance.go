@@ -3,3 +3,7 @@
 // this registry is used to declare new instance with string in middleware.RequestValidator
 
 package registry
+
+var globalInstance = &requestInstance{}
+
+type requestInstance map[string]interface{}
