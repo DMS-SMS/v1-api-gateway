@@ -2,4 +2,4 @@
 // instance_registry.go is file that save all instance of each request entity in map
 // this registry is used to declare new instance with string in middleware.RequestValidator
 
-package entity
+package registry
