@@ -5,6 +5,9 @@
 package registry
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/ioutil"
 	"log"
 	"regexp"
@@ -21,5 +24,28 @@ func init() {
 		if regexp.MustCompile("^request_.*.go$").MatchString(f.Name()) {
 			targetFiles = append(targetFiles, entityDir + f.Name())
 		}
+	}
+
+	for _, target := range targetFiles {
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, target, nil, parser.ParseComments)
+		if err != nil {
+			log.Fatalf("unable to parse file, file: %s, err: %v\n", target, err.Error())
+			return
+		}
+
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.Ident:
+				if x.Obj == nil || x.Obj.Kind != ast.Typ {
+					return true
+				}
+				switch s := x.Obj.Decl.(*ast.TypeSpec); s.Type.(type) {
+				case *ast.StructType:
+					globalInstance.registerInstance(s.Name.Name)
+				}
+			}
+			return true
+		})
 	}
 }
