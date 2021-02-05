@@ -5,9 +5,9 @@
 package registry
 
 import (
+	"github.com/dlclark/regexp2"
 	"io/ioutil"
 	"log"
-	"regexp"
 )
 
 func init() {
@@ -19,7 +19,8 @@ func init() {
 
 	var targetFiles []string
 	for _, f := range files {
-		if regexp.MustCompile("^request(?!_event).*.go$").MatchString(f.Name()) {
+		// use regexp2 to use (?!) expression
+		if match, _ := regexp2.MustCompile("^request(?!_event).*.go$", regexp2.None).MatchString(f.Name()); match {
 			targetFiles = append(targetFiles, entityDir + f.Name())
 		}
 	}
