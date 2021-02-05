@@ -16,7 +16,12 @@ type requestInstance map[string]interface{}
 // register new instance key as string (only regex "^.Request$" accept)
 func (ri *requestInstance) registerInstance(instance string) {
 	if !regexp.MustCompile("^.*Request$").MatchString(instance) {
-		log.Fatalf("regex of all struct in request entity fileis must be \"^.*Request$\", struct name: %s", instance)
+		log.Fatalf("regex of all struct in request entity files must be \"^.*Request$\", struct name: %s", instance)
 	}
-	(*ri)[instance] = nil
+
+	if sample, ok := requestSamples[instance]; !ok {
+		log.Fatalf("register struct must be in request sample, struct name: %s\n", instance)
+	} else {
+		(*ri)[instance] = sample
+	}
 }
