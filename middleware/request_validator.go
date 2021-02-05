@@ -6,6 +6,9 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"reflect"
+	"runtime"
+	"strings"
 )
 
 // create all closure from this global struct method
@@ -24,6 +27,10 @@ func RequestValidator(v *validator.Validate, h gin.HandlerFunc) gin.HandlerFunc 
 }
 
 func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
+	// EX) gateway/handler.(*_default).CreateNewStudent-fm
+	fNames := strings.Split(runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name(), ".")
+	fName := strings.TrimSuffix(fNames[2], "-fm")
+
 	return func(c *gin.Context) {
 
 	}
