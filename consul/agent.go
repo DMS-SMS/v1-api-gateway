@@ -35,4 +35,8 @@ type Agent interface {
 	// return closure that deregister service node
 	// add in v.1.0.2 (move from tool/closure/consul.go)
 	ServiceNodeDeregistry(server.Server) func() error
+
+	// get redis connection config from consul KV
+	// add in v.1.0.3
+	GetRedisConfigFromKV(key string) (RedisConfigKV, error)
 }

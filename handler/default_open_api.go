@@ -20,31 +20,19 @@ const (
 
 func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
-	topSpan := h.tracer.StartSpan(fmt.Sprintf("%s %s", c.Request.Method, c.FullPath())).SetTag("X-Request-Id", reqID)
 
-	inAdvanceEntry, ok := c.Get("RequestLogEntry")
-	entry, ok := inAdvanceEntry.(*logrus.Entry)
-	if !ok {
-		msg := "unable to get request log entry from middleware"
-		c.JSON(http.StatusInternalServerError, gin.H{"status": http.StatusInternalServerError, "code": 0, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg}).Error()
-		topSpan.LogFields(log.Int("status", http.StatusInternalServerError), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusInternalServerError).SetTag("code", 0).Finish()
-		return
-	}
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
 
-	// logic handling Unauthorized
-	var uuidClaims jwtutil.UUIDClaims
-	if ok, claims, _code, msg := h.checkIfAuthenticated(c); ok {
-		uuidClaims = claims
-		entry = entry.WithField("user_uuid", uuidClaims.UUID)
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": http.StatusUnauthorized, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusUnauthorized, "code": _code, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusUnauthorized), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusUnauthorized).SetTag("code", _code).Finish()
-		return
-	}
+	// get log entry from middleware
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
+
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
 
 	var limited bool
 	h.mutex.Lock()
@@ -62,22 +50,12 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		msg := "you can use the API only once every 5 seconds, please wait"
 		c.JSON(http.StatusLocked, gin.H{"status": http.StatusLocked, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": http.StatusLocked, "code": 0, "message": msg}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusLocked), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusLocked).SetTag("code", 0).Finish()
 		return
 	}
 
-	// logic handling BadRequest
-	var receivedReq entity.GetPlaceWithNaverOpenAPIRequest
-	if ok, _code, msg := h.checkIfValidRequest(c, &receivedReq); ok {
-	} else {
-		reqBytes, _ := json.Marshal(receivedReq)
-		c.JSON(http.StatusBadRequest, gin.H{"status": http.StatusBadRequest, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": http.StatusBadRequest, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		topSpan.LogFields(log.Int("status", http.StatusBadRequest), log.Int("code", _code), log.String("message", msg))
-		topSpan.SetTag("status", http.StatusBadRequest).SetTag("code", _code).Finish()
-		return
-	}
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.GetPlaceWithNaverOpenAPIRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
 
 	openApiSpan := h.tracer.StartSpan("GetPlaceWithNaverOpenAPI", opentracing.ChildOf(topSpan.Context()))
@@ -95,8 +73,6 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		msg := "unexpected error occurs while sending request to naver open api"
 		c.JSON(status, gin.H{"status": status, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": 0, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", 0).Finish()
 		return
 	}
 
@@ -106,8 +82,6 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		msg := "unexpected error occurs while decoding response body from naver open api"
 		c.JSON(status, gin.H{"status": status, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": status, "code": 0, "message": msg, "request": string(reqBytes)}).Error()
-		topSpan.LogFields(log.Int("status", status), log.Int("code", 0), log.String("message", msg))
-		topSpan.SetTag("status", status).SetTag("code", 0).Finish()
 		return
 	}
 
@@ -115,8 +89,6 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 		msg := fmt.Sprintf("unexpected error occurs while decoding response body from naver open api, reason: %s", decodedResp.ErrorMessage)
 		c.JSON(resp.StatusCode, gin.H{"status": resp.StatusCode, "code": 0, "message": msg})
 		entry.WithFields(logrus.Fields{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": msg, "request": string(reqBytes)}).Warn()
-		topSpan.LogFields(log.Int("status", resp.StatusCode), log.String("code", decodedResp.ErrorCode), log.String("message", msg))
-		topSpan.SetTag("status", resp.StatusCode).SetTag("code", decodedResp.ErrorCode).Finish()
 		return
 	}
 
@@ -127,8 +99,6 @@ func (h *_default) GetPlaceWithNaverOpenAPI(c *gin.Context) {
 	respBytes, _ := json.Marshal(sendResp)
 	entry.WithFields(logrus.Fields{"status": resp.StatusCode, "code": decodedResp.ErrorCode, "message": decodedResp.ErrorMessage,
 		"response": string(respBytes), "request": string(reqBytes), "date": time.Now().Format("2006-01-02")}).Info()
-	topSpan.LogFields(log.Int("status", resp.StatusCode), log.String("code", decodedResp.ErrorCode), log.String("message", decodedResp.ErrorMessage))
-	topSpan.SetTag("status", resp.StatusCode).SetTag("code", decodedResp.ErrorCode).Finish()
 
 	return
 }

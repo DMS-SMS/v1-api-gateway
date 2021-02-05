@@ -29,4 +29,5 @@ func (l *logEntrySetter) setLogEntry(c *gin.Context) {
 		"full_uri":     c.FullPath(),
 	})
 	c.Set("RequestLogEntry", entry)
+	c.Next()
 }

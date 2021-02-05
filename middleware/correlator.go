@@ -10,5 +10,6 @@ func Correlator() gin.HandlerFunc {
 		xReqId := uuid.New().String()
 		c.Request.Header.Set("X-Request-Id", xReqId)
 		c.Header("X-Request-Id", xReqId)
+		c.Next()
 	}
 }

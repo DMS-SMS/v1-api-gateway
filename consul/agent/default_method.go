@@ -4,6 +4,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gateway/consul"
@@ -117,4 +118,24 @@ func (d *_default) FailTTLHealth(checkID, note string) (err error) {
 // move from tool/agent/default.go to agent/default_method.go in v.1.0.2
 func (d *_default) PassTTLHealth(checkID, note string) (err error) {
 	return d.client.Agent().PassTTL(checkID, note)
+}
+
+func (d *_default) GetRedisConfigFromKV(key string) (conf consul.RedisConfigKV, err error) {
+	kv, _, err := d.client.KV().Get(key, nil)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("unable to get %s KV from consul, err: %v", key, err.Error()))
+		return
+	}
+
+	if err = json.Unmarshal(kv.Value, &conf); err != nil {
+		err = errors.New(fmt.Sprintf("error occurs while unmarshal KV value into struct, err: %v", err.Error()))
+		return
+	}
+
+	if err = d.validator.Struct(&conf); err != nil {
+		err = errors.New(fmt.Sprintf("invalid %s KV value, err: %v", key, err.Error()))
+		return
+	}
+
+	return
 }

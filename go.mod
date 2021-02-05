@@ -7,10 +7,12 @@ require (
 	github.com/aws/aws-sdk-go v1.23.0
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dlclark/regexp2 v1.4.0
 	github.com/eapache/go-resiliency v1.2.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.1
+	github.com/go-redis/redis/v8 v8.4.11
 	github.com/golang/protobuf v1.4.3
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/consul/api v1.1.0

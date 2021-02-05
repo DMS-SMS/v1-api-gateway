@@ -4,7 +4,10 @@
 
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+)
 
 // customRouter basically embedding *gin.Engine, and declare to override additional function in basic router
 // Additional function is run closure after & before server start or end, etc ...
@@ -22,7 +25,9 @@ func New(baseRouter *gin.Engine) (router *customRouter) {
 	return
 }
 
-// register closure function to execute before run
-func (r *customRouter) RegisterBeforeRun(fn ...func() error) {
-	r.beforeRun = append(r.beforeRun, fn...)
+// customRouterGroup basically embedding *gin.RouterGroup
+// Additional function is routing handler wrapped with access token handler, etc ...
+type customRouterGroup struct {
+	*gin.RouterGroup
+	Validator *validator.Validate
 }
