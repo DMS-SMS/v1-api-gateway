@@ -28,8 +28,8 @@ services:
       - DELETE_REDIS_TOPIC=${DELETE_REDIS_TOPIC} # add in v.1.0.3
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
-        - ./entity:/usr/share/gateway/entity
-        - ./handler:/usr/share/gateway/handler
+      - ./entity:/usr/share/gateway/entity
+      - ./handler:/usr/share/gateway/handler
     deploy:
       mode: replicated
       replicas: 1
