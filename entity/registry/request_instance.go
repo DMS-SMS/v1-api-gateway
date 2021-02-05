@@ -16,6 +16,15 @@ var globalInstance = &requestInstance{}
 
 type requestInstance map[string]interface{}
 
+func GetInstance(key string) interface{} {
+	return globalInstance.getInstance(key)
+}
+
+// get instance with key from registry
+func (ri *requestInstance) getInstance(key string) interface{} {
+	return (*ri)[key]
+}
+
 // register new request instance with parsing struct in file
 func (ri *requestInstance) registerInstanceFromFile(path string) {
 	fset := token.NewFileSet()
@@ -41,14 +50,14 @@ func (ri *requestInstance) registerInstanceFromFile(path string) {
 }
 
 // register new request instance with instance name (only regex "^.Request$" key accept)
-func (ri *requestInstance) registerInstance(instance string) {
-	if !regexp.MustCompile("^.*Request$").MatchString(instance) {
-		log.Fatalf("regex of all struct in request entity files must be \"^.*Request$\", struct name: %s", instance)
+func (ri *requestInstance) registerInstance(key string) {
+	if !regexp.MustCompile("^.*Request$").MatchString(key) {
+		log.Fatalf("regex of all struct in request entity files must be \"^.*Request$\", struct name: %s", key)
 	}
 
-	if sample, ok := requestSamples[instance]; !ok {
-		log.Fatalf("register struct must be in request sample, struct name: %s\n", instance)
+	if sample, ok := requestSamples[key]; !ok {
+		log.Fatalf("register struct must be in request sample, struct name: %s\n", key)
 	} else {
-		(*ri)[instance] = sample
+		(*ri)[key] = sample
 	}
 }
