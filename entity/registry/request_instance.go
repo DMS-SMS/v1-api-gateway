@@ -17,13 +17,19 @@ var globalInstance = &requestInstance{}
 
 type requestInstance map[string]interface{}
 
-func GetInstance(key string) interface{} {
+func GetInstance(key string) (interface{}, bool) {
 	return globalInstance.getInstance(key)
 }
 
 // get instance with key from registry
-func (ri *requestInstance) getInstance(key string) interface{} {
-	return reflect.New(reflect.TypeOf((*ri)[key])).Interface()
+func (ri *requestInstance) getInstance(key string) (instance interface{}, ok bool) {
+	value, ok := (*ri)[key]
+	if !ok {
+		return
+	}
+
+	instance = reflect.New(reflect.TypeOf(value)).Interface()
+	return
 }
 
 // register new request instance with parsing struct in file
