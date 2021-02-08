@@ -236,6 +236,7 @@ func main() {
 		middleware.GinHResponseWriter(),          // change ResponseWriter in *gin.Context to custom writer overriding that (add in v.1.0.3)
 		middleware.TracerSpanStarter(apiTracer),  // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
+	router.Validator = validator.New()
 
 	// routing auth service API
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
