@@ -237,6 +237,7 @@ func main() {
 		middleware.TracerSpanStarter(apiTracer),  // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
 	router.Validator = validator.New()
+	redisHandler := middleware.RedisHandler(redisCli, apiTracer)
 
 	// routing auth service API
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
