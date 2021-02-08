@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	jwtutil "gateway/tool/jwt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/opentracing/opentracing-go"
@@ -31,31 +32,31 @@ func RedisHandler(cli *redis.Client, tracer opentracing.Tracer) *redisHandler {
 // response value of redis key if exists instead request to service
 func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 	ctx := context.Background()
-	separatedKey := strings.Split(key, ".")
-
-	formatKey := func(c *gin.Context) string {
-		formatted := make([]string, len(separatedKey))
-		for i, sep := range separatedKey {
-			if strings.HasPrefix(sep, "$") {
-				formatted[i] = c.Param(strings.TrimPrefix(sep, "$"))
-				continue
-			}
-			formatted[i] = sep
-		}
-		return strings.Join(formatted, ".")
-	}
 
 	return func(c *gin.Context) {
-		redisKey := formatKey(c)
 		reqID := c.GetHeader("X-Request-Id")
 
 		inAdvanceTopSpan, _ := c.Get("TopSpan")
 		topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
 
-		inAdvanceEntry, _ := c.Get("RequestLogEntry")
-		entry, _ := inAdvanceEntry.(*logrus.Entry)
+		inAdvanceClaims, _ := c.Get("Claims")
+		uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 
-		inAdvanceReq, _ := c.Get("Request")
+		separatedKey := strings.Split(key, ".")
+		formatted := make([]string, len(separatedKey))
+		for i, sep := range separatedKey {
+			if strings.HasPrefix(sep, "$") {
+				param := strings.TrimPrefix(sep, "$")
+				if param == "student_uuid" && c.Param(param) != uuidClaims.UUID {
+					c.Next()
+					return
+				}
+				formatted[i] = c.Param(param)
+			} else {
+				formatted[i] = sep
+			}
+		}
+		redisKey := strings.Join(formatted, ".")
 
 		redisSpan := r.tracer.StartSpan("GetRedis", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
 		value, err := r.client.Get(ctx, redisKey).Result()
@@ -75,13 +76,17 @@ func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		redisSpan.SetTag("success", true).LogFields(log.String("key", redisKey), log.String("value", value))
+		redisSpan.Finish()
+		c.AbortWithStatusJSON(int(cashedResp["status"].(float64)), cashedResp)
+
+		inAdvanceReq, _ := c.Get("Request")
 		respBytes, _ := json.Marshal(cashedResp)
 		reqBytes, _ := json.Marshal(inAdvanceReq)
 
-		redisSpan.SetTag("success", true).LogFields(log.String("key", redisKey), log.String("value", value))
-		redisSpan.Finish()
-
-		c.AbortWithStatusJSON(int(cashedResp["status"].(float64)), cashedResp)
+		inAdvanceEntry, _ := c.Get("RequestLogEntry")
+		entry, _ := inAdvanceEntry.(*logrus.Entry)
+		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 		entry.WithFields(logrus.Fields{"status": cashedResp["status"], "code": cashedResp["code"], "message": cashedResp["message"],
 			"response": string(respBytes), "request": string(reqBytes)}).Info()
 	}
