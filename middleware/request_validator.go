@@ -50,16 +50,16 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 		}
 
 		switch req.(type) {
-		case entity.GetScheduleRequest, entity.GetTimeTableRequest:
+		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest:
 			if err := c.ShouldBindUri(req); err != nil {
 				respFor400["code"] = code.FailToBindRequestToStruct
 				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
 				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
 				return
 			}
-		case entity.GetClubsSortByUpdateTimeRequest, entity.GetRecruitmentsSortByCreateTimeRequest, entity.GetStudentOutingsRequest,
-			entity.GetOutingWithFilterRequest, entity.GetAnnouncementsRequest, entity.GetPlaceWithNaverOpenAPIRequest,
-			entity.GetStudentUUIDsWithInformRequest, entity.GetTeacherUUIDsWithInformRequest, entity.GetParentUUIDsWithInformRequest:
+		case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest, *entity.GetStudentOutingsRequest,
+			*entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
+			*entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest:
 			if err := c.ShouldBindQuery(req); err != nil {
 				respFor400["code"] = code.FailToBindRequestToStruct
 				respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
@@ -106,7 +106,7 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 		}
 
 		switch req.(type) {
-		case *entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest:
+		case **entity.GetStudentUUIDsWithInformRequest, **entity.GetTeacherUUIDsWithInformRequest, **entity.GetParentUUIDsWithInformRequest:
 			emptyValue := reflect.New(reflect.TypeOf(req).Elem()).Elem().Interface()
 			if reflect.DeepEqual(reflect.ValueOf(req).Elem().Interface(), emptyValue) {
 				respFor400["code"] = code.IntegrityInvalidRequest
