@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sirupsen/logrus"
+	systemlog "log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -34,6 +35,9 @@ func RedisHandler(cli *redis.Client, tracer opentracing.Tracer) *redisHandler {
 
 // response value of redis key if exists instead request to service
 func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
+	if key == "" {
+		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
+	}
 	ctx := context.Background()
 	separatedKey := strings.Split(key, ".")
 
