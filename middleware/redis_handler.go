@@ -39,7 +39,6 @@ func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
 	}
 	ctx := context.Background()
-	separatedKey := strings.Split(key, ".")
 
 	return func(c *gin.Context) {
 		reqID := c.GetHeader("X-Request-Id")
@@ -51,45 +50,23 @@ func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 		uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
 
 		inAdvanceReq, _ := c.Get("Request")
-		reqValue := reflect.ValueOf(inAdvanceReq).Elem()
 		reqBytes, _ := json.Marshal(inAdvanceReq)
 
 		inAdvanceEntry, _ := c.Get("RequestLogEntry")
 		entry, _ := inAdvanceEntry.(*logrus.Entry)
 
-		formatted := make([]string, len(separatedKey))
-		for i, sep := range separatedKey {
-			if strings.HasPrefix(sep, "$") {
-				param := strings.TrimPrefix(sep, "$")
-				if param == "student_uuid" && c.Param(param) != uuidClaims.UUID {
-					c.Next()
-					return
-				}
-				var paramValue string
-				switch true {
-				case c.Param(param) != "":
-					paramValue = c.Param(param)
-				case reqValue.FieldByName(param).IsValid():
-					switch field := reqValue.FieldByName(param); field.Interface().(type) {
-					case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-						paramValue = strconv.Itoa(int(field.Int()))
-					default:
-						paramValue = field.String()
-					}
-				default:
-					msg := fmt.Sprintf("unable to format param of redis key, key: %s, param: %s", key, param)
-					c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-						"status": http.StatusInternalServerError, "code": 0, "message": msg,
-					})
-					entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": msg, "request": string(reqBytes)}).Error()
-					return
-				}
-				formatted[i] = paramValue
-			} else {
-				formatted[i] = sep
+		redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq, uuidClaims)
+		if redisKey == "" {
+			if err == nil {
+				c.Next()
+				return
 			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"status": http.StatusInternalServerError, "code": 0, "message": err.Error(),
+			})
+			entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": err.Error(), "request": string(reqBytes)}).Error()
+			return
 		}
-		redisKey := strings.Join(formatted, ".")
 
 		redisSpan := r.tracer.StartSpan("GetRedis", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
 		value, err := r.client.Get(ctx, redisKey).Result()
@@ -118,4 +95,38 @@ func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 		entry.WithFields(logrus.Fields{"status": cashedResp["status"], "code": cashedResp["code"], "message": cashedResp["message"],
 			"response": string(respBytes), "request": string(reqBytes)}).Info()
 	}
+}
+
+func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims jwtutil.UUIDClaims) (redisKey string, err error) {
+	reqValue := reflect.ValueOf(req).Elem()
+	separatedKey := strings.Split(key, ".")
+	formatted := make([]string, len(separatedKey))
+	for i, sep := range separatedKey {
+		if strings.HasPrefix(sep, "$") {
+			param := strings.TrimPrefix(sep, "$")
+			if param == "student_uuid" && c.Param(param) != claims.UUID {
+				return
+			}
+			var paramValue string
+			switch true {
+			case c.Param(param) != "":
+				paramValue = c.Param(param)
+			case reqValue.FieldByName(param).IsValid():
+				switch field := reqValue.FieldByName(param); field.Interface().(type) {
+				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+					paramValue = strconv.Itoa(int(field.Int()))
+				default:
+					paramValue = field.String()
+				}
+			default:
+				err = errors.New(fmt.Sprintf("unable to format param of redis key, key: %s, param: %s", key, param))
+				return
+			}
+			formatted[i] = paramValue
+		} else {
+			formatted[i] = sep
+		}
+	}
+	redisKey = strings.Join(formatted, ".")
+	return
 }
