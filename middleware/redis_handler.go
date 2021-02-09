@@ -73,7 +73,6 @@ func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 			return
 		}
 
-		redisSpan := r.tracer.StartSpan("GetRedis", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
 		value, err := r.client.Get(ctx, redisKey).Result()
 		if err != nil {
 			err = errors.New(fmt.Sprintf("some error occurs while getting redis value with key, key: %s, err: %v", redisKey, err))
@@ -99,6 +98,65 @@ func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 		entry = entry.WithField("user_uuid", uuidClaims.UUID)
 		entry.WithFields(logrus.Fields{"status": cashedResp["status"], "code": cashedResp["code"], "message": cashedResp["message"],
 			"response": string(respBytes), "request": string(reqBytes)}).Info()
+	}
+}
+
+func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) gin.HandlerFunc {
+	if key == "" {
+		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
+	}
+	ctx := context.Background()
+
+	return func(c *gin.Context) {
+		// run business logic handler
+		c.Next()
+
+		reqID := c.GetHeader("X-Request-Id")
+
+		inAdvanceTopSpan, _ := c.Get("TopSpan")
+		topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+		inAdvanceReq, _ := c.Get("Request")
+
+		redisSpan := r.tracer.StartSpan("PublishSetEvent", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
+		status, resp := 0, gin.H{}
+		switch w := c.Writer.(type) {
+		case *ginHResponseWriter:
+			status = w.status
+			resp = w.json
+		default:
+			err := errors.New("unable to get response status code from default response writer")
+			redisSpan.SetTag("success", false).LogFields(log.String("key", key), log.Error(err))
+			redisSpan.Finish()
+			return
+		}
+
+		if status != successStatus {
+			err := errors.New("response status code is not success status code to set response in redis")
+			redisSpan.SetTag("success", false).LogFields(log.String("key", key), log.Error(err))
+			redisSpan.Finish()
+			return
+		}
+
+		redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq)
+		if err != nil {
+			redisSpan.SetTag("success", false).LogFields(log.String("key", key), log.Error(err))
+			redisSpan.Finish()
+			return
+		}
+
+		resp["redis.key"] = redisKey
+		respBytes, _ := json.Marshal(resp)
+		result, err := r.client.Publish(ctx, r.setTopic, string(respBytes)).Result()
+
+		if err != nil {
+			redisSpan.SetTag("success", false)
+		} else {
+			redisSpan.SetTag("success", true)
+		}
+		redisSpan.LogFields(log.String("key", key), log.Int64("result", result), log.Error(err))
+		redisSpan.Finish()
+		return
 	}
 }
 
