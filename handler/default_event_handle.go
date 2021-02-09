@@ -5,11 +5,14 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	log "github.com/micro/go-micro/v2/logger"
+	"time"
 )
 
 var ctx = context.Background()
@@ -20,7 +23,33 @@ func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
 	return
 }
 
-func (h *_default) DeleteRedisKeyAssociatedWithResource(message *redis.Message) (err error) {
+func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
+	resp := gin.H{}
+	if err = json.Unmarshal([]byte(msg.Payload), &resp); err != nil {
+		err = errors.New(fmt.Sprintf("unable to unmarshal set redis key msg to golang struct, err: %v", err))
+		return
+	}
+
+	if _, ok := resp["redis.key"]; !ok {
+		err = errors.New("msg to set in redis have to include redis.key field")
+		return
+	}
+
+	key := resp["redis.key"].(string)
+	delete(resp, "redis.key")
+	respBytes, _ := json.Marshal(resp)
+
+	result, err := h.redisClient.Set(ctx, key, string(respBytes), time.Minute).Result()
+	if err != nil {
+		err = errors.New(fmt.Sprintf("unable to set response in redis key, err: %v", err))
+		return
+	}
+
+	log.Infof("succeed to set response in redis key!, key: %s, result: %s", key, result)
+	return
+}
+
+func (h *_default) DeleteAssociatedRedisKey(message *redis.Message) (err error) {
 	return 
 }
 
