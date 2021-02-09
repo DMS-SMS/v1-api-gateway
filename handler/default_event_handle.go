@@ -29,11 +29,13 @@ func (h *_default) deleteRedisKeyWithPattern(pattern string) (err error) {
 	keys, err := h.redisClient.Keys(ctx, pattern).Result()
 	if err != nil {
 		err = errors.New(fmt.Sprintf("unable to execute redis KEYS cmd, err: %v", err))
+		return
 	}
 
 	for _, key := range keys {
-		if _, err := h.redisClient.Del(ctx, key).Result(); err != nil {
+		if _, err = h.redisClient.Del(ctx, key).Result(); err != nil {
 			err = errors.New(fmt.Sprintf("unable to execute redis DEL cmd, key: %s, err: %v", key, err))
+			return
 		}
 	}
 
