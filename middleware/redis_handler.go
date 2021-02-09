@@ -22,14 +22,16 @@ import (
 )
 
 type redisHandler struct {
-	client *redis.Client
-	tracer opentracing.Tracer
+	client   *redis.Client
+	tracer   opentracing.Tracer
+	setTopic string
 }
 
-func RedisHandler(cli *redis.Client, tracer opentracing.Tracer) *redisHandler {
+func RedisHandler(cli *redis.Client, tracer opentracing.Tracer, setTopic string) *redisHandler {
 	return &redisHandler{
-		client: cli,
-		tracer: tracer,
+		client:   cli,
+		tracer:   tracer,
+		setTopic: setTopic,
 	}
 }
 
