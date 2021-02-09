@@ -34,7 +34,7 @@ func RedisHandler(cli *redis.Client, tracer opentracing.Tracer) *redisHandler {
 }
 
 // response value of redis key if exists instead request to service
-func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
+func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 	if key == "" {
 		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
 	}
