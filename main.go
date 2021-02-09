@@ -168,7 +168,8 @@ func main() {
 			MaxNumberOfMessages: aws.Int64(10),
 			WaitTimeSeconds:     aws.Int64(2),
 		}),
-		subscriber.RedisListener(redisDeleteTopic, defaultHandler.DeleteRedisKeyWithPattern, 5), // add in v.1.0.3
+		subscriber.RedisListener(redisDeleteTopic, defaultHandler.DeleteAssociatedRedisKey, 5), // add in v.1.0.3
+		subscriber.RedisListener(redisSetTopic, defaultHandler.SetRedisKeyWithResponse, 5), // add in v.1.0.4
 	)
 
 	// create log file
