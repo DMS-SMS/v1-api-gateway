@@ -16,12 +16,12 @@ import (
 	customrouter "gateway/router"
 	"gateway/subscriber"
 	"gateway/tool/env"
+	customlogrus "gateway/tool/logrus"
 	topic "gateway/utils/topic/golang"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -138,36 +138,16 @@ func main() {
 		subscriber.RedisListener(redisSetTopic, defaultHandler.SetRedisKeyWithResponse, 5), // add in v.1.0.4
 	)
 
-	// create log file
+	// create logger & add hooks
 	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
 		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
 	}
-	authLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/auth.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-
-	// create logger & add hooks
-	authLogger := logrus.New()
-	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
-	clubLogger := logrus.New()
-	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
-	outingLogger := logrus.New()
-	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
-	scheduleLogger := logrus.New()
-	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
-	announcementLogger := logrus.New()
-	announcementLogger.Hooks.Add(logrustash.New(announcementLog, logrustash.DefaultFormatter(logrus.Fields{"service": "announcement"})))
-	openApiLogger := logrus.New()
-	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
+	authLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/auth.log", logrus.Fields{"service": "auth"})
+	clubLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/club.log", logrus.Fields{"service": "club"})
+	outingLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/outing.log", logrus.Fields{"service": "outing"})
+	scheduleLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/schedule.log", logrus.Fields{"service": "schedule"})
+	announcementLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/announcement.log", logrus.Fields{"service": "announcement"})
+	openApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/open-api.log", logrus.Fields{"service": "open-api"})
 
 	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
@@ -262,7 +242,8 @@ func main() {
 	// routing outing service API
 	outingRouter := router.CustomGroup("/", middleware.LogEntrySetter(outingLogger))
 	outingRouter.POSTWithAuth("/v1/outings", defaultHandler.CreateOuting)
-	outingRouter.GETWithAuth("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings)
+	outingRouter.GETWithAuth("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings,
+		redisHandler.ResponderAndSetEventPublisher("students.$student_uuid.outings.start.$Start.count.$Count", http.StatusOK)...)
 	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.GetOutingInform)
 	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid/card", defaultHandler.GetCardAboutOuting)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting)
