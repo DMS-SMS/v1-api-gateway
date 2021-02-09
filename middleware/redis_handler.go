@@ -97,14 +97,14 @@ func (r *redisHandler) ResponseIfExistWithKey(key string) gin.HandlerFunc {
 	}
 }
 
-func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims jwtutil.UUIDClaims) (redisKey string, err error) {
+func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims ...jwtutil.UUIDClaims) (redisKey string, err error) {
 	reqValue := reflect.ValueOf(req).Elem()
 	separatedKey := strings.Split(key, ".")
 	formatted := make([]string, len(separatedKey))
 	for i, sep := range separatedKey {
 		if strings.HasPrefix(sep, "$") {
 			param := strings.TrimPrefix(sep, "$")
-			if param == "student_uuid" && c.Param(param) != claims.UUID {
+			if len(claims) >= 1 && param == "student_uuid" && c.Param(param) != claims[0].UUID {
 				return
 			}
 			var paramValue string
