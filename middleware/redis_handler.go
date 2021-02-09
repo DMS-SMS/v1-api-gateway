@@ -158,7 +158,8 @@ func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) 
 		} else {
 			redisSpan.SetTag("success", true)
 		}
-		redisSpan.LogFields(log.String("key", key), log.Int64("result", result), log.Error(err))
+		redisSpan.LogFields(log.String("topic", r.setTopic), log.String("msg", string(respBytes)),
+			log.String("key", redisKey), log.Int64("result", result), log.Error(err))
 		redisSpan.Finish()
 		return
 	}
