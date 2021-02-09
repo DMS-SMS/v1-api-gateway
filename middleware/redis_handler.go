@@ -35,6 +35,10 @@ func RedisHandler(cli *redis.Client, tracer opentracing.Tracer, setTopic string)
 	}
 }
 
+func (r *redisHandler) ResponderAndSetEventPublisher(key string, successStatus int) []gin.HandlerFunc {
+	return []gin.HandlerFunc{r.ResponderIfKeyExist(key), r.SetResponseEventPublisher(key, successStatus)}
+}
+
 // response value of redis key if exists instead request to service
 func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 	if key == "" {
