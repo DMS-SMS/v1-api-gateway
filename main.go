@@ -98,45 +98,11 @@ func main() {
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
-	authSrvCli := struct {
-		authproto.AuthAdminService
-		authproto.AuthStudentService
-		authproto.AuthTeacherService
-		authproto.AuthParentService
-	}{
-		AuthAdminService:   authproto.NewAuthAdminService(topic.AuthServiceName, gRPCCli),
-		AuthStudentService: authproto.NewAuthStudentService(topic.AuthServiceName, gRPCCli),
-		AuthTeacherService: authproto.NewAuthTeacherService(topic.AuthServiceName, gRPCCli),
-		AuthParentService:  authproto.NewAuthParentService(topic.AuthServiceName, gRPCCli),
-	}
-	clubSrvCli := struct {
-		clubproto.ClubAdminService
-		clubproto.ClubStudentService
-		clubproto.ClubLeaderService
-	}{
-		ClubAdminService:   clubproto.NewClubAdminService(topic.ClubServiceName, gRPCCli),
-		ClubStudentService: clubproto.NewClubStudentService(topic.ClubServiceName, gRPCCli),
-		ClubLeaderService:  clubproto.NewClubLeaderService(topic.ClubServiceName, gRPCCli),
-	}
-	outingSrvCli := struct {
-		outingproto.OutingStudentService
-		outingproto.OutingTeacherService
-		outingproto.OutingParentsService
-	} {
-		OutingStudentService: outingproto.NewOutingStudentService("", gRPCCli),
-		OutingTeacherService: outingproto.NewOutingTeacherService("", gRPCCli),
-		OutingParentsService: outingproto.NewOutingParentsService("", gRPCCli),
-	}
-	scheduleSrvCli := struct {
-		scheduleproto.ScheduleService
-	} {
-		ScheduleService: scheduleproto.NewScheduleService("schedule", gRPCCli),
-	}
-	announcementSrvCli := struct {
-		announcementproto.AnnouncementService
-	} {
-		AnnouncementService: announcementproto.NewAnnouncementService("announcement", gRPCCli),
-	}
+	authSrvCli := authproto.NewAuthService(topic.AuthServiceName, gRPCCli)
+	clubSrvCli := clubproto.NewClubService(topic.ClubServiceName, gRPCCli)
+	outingSrvCli := outingproto.NewOutingService("", gRPCCli)
+	scheduleSrvCli := scheduleproto.NewScheduleService("schedule", gRPCCli)
+	announcementSrvCli := announcementproto.NewAnnouncementService("announcement", gRPCCli)
 
 	// create http request & event handler
 	defaultHandler := handler.Default(
