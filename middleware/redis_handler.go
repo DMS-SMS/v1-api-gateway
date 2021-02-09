@@ -57,6 +57,7 @@ func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 		inAdvanceEntry, _ := c.Get("RequestLogEntry")
 		entry, _ := inAdvanceEntry.(*logrus.Entry)
 
+		redisSpan := r.tracer.StartSpan("GetRedis", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
 		redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq, uuidClaims)
 		if redisKey == "" {
 			if err == nil {
@@ -67,6 +68,8 @@ func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 				"status": http.StatusInternalServerError, "code": 0, "message": err.Error(),
 			})
 			entry.WithFields(logrus.Fields{"status": http.StatusInternalServerError, "code": 0, "message": err.Error(), "request": string(reqBytes)}).Error()
+			redisSpan.SetTag("success", false).LogFields(log.String("key", key), log.Error(err))
+			redisSpan.Finish()
 			return
 		}
 
