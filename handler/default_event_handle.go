@@ -54,12 +54,13 @@ func (h *_default) DeleteAssociatedRedisKey(message *redis.Message) (err error) 
 }
 
 // delete all redis key with pattern sent from parameter
-func (h *_default) deleteRedisKeyWithPattern(pattern string) (err error) {
+func (h *_default) deleteRedisKeyWithPattern(pattern string) (num int, err error) {
 	keys, err := h.redisClient.Keys(ctx, pattern).Result()
 	if err != nil {
 		err = errors.New(fmt.Sprintf("unable to execute redis KEYS cmd, err: %v", err))
 		return
 	}
+	num = len(keys)
 
 	for _, key := range keys {
 		if _, err = h.redisClient.Del(ctx, key).Result(); err != nil {
