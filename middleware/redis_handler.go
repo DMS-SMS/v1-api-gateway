@@ -189,6 +189,8 @@ func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req inte
 				default:
 					paramValue = field.String()
 				}
+			case param == "TokenUUID":
+				paramValue = claims[0].UUID
 			default:
 				err = errors.New(fmt.Sprintf("unable to format param of redis key, key: %s, param: %s", key, param))
 				return
