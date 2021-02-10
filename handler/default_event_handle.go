@@ -31,6 +31,7 @@ func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
 	return
 }
 
+// set response in redis key with response in message payload
 func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 	resp := gin.H{}
 	if err = json.Unmarshal([]byte(msg.Payload), &resp); err != nil {
@@ -57,7 +58,8 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 	return
 }
 
-func (h *_default) DeleteAssociatedRedisKey(message *redis.Message) (err error) {
+// delete all redis key associated with message payload using regexp
+func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 	return 
 }
 
