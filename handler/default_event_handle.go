@@ -19,6 +19,9 @@ import (
 var (
 	ctx = context.Background()
 
+	// check if payload contains {} for param
+	paramStringRegex = regexp.MustCompile("{.*}")
+
 	studentOutingsRegex = regexp.MustCompile("^students.student-\\d{12}.outings$")
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
 	outingsRegex = regexp.MustCompile("^outings$")
