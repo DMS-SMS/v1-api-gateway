@@ -123,6 +123,9 @@ func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) 
 		inAdvanceTopSpan, _ := c.Get("TopSpan")
 		topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
 
+		inAdvanceClaims, _ := c.Get("Claims")
+		uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+
 		inAdvanceReq, _ := c.Get("Request")
 
 		redisSpan := r.tracer.StartSpan("PublishSetEvent", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
@@ -145,7 +148,7 @@ func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) 
 			return
 		}
 
-		redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq)
+		redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq, uuidClaims)
 		if err != nil {
 			redisSpan.SetTag("success", false).LogFields(log.String("key", key), log.Error(err))
 			redisSpan.Finish()
@@ -235,7 +238,7 @@ func (r *redisHandler) DeleteKeyEventPublisher(keys[] string, successStatus int)
 	}
 }
 
-func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims ...jwtutil.UUIDClaims) (redisKey string, err error) {
+func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims jwtutil.UUIDClaims) (redisKey string, err error) {
 	var reqValue reflect.Value
 	if req != nil {
 		reqValue = reflect.ValueOf(req).Elem()
@@ -245,7 +248,7 @@ func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req inte
 	for i, sep := range separatedKey {
 		if strings.HasPrefix(sep, "$") {
 			param := strings.TrimPrefix(sep, "$")
-			if len(claims) >= 1 && param == "student_uuid" && c.Param(param) != claims[0].UUID {
+			if param == "student_uuid" && c.Param(param) != claims.UUID {
 				return
 			}
 			var paramValue string
@@ -260,7 +263,7 @@ func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req inte
 					paramValue = field.String()
 				}
 			case param == "TokenUUID":
-				paramValue = claims[0].UUID
+				paramValue = claims.UUID
 			default:
 				err = errors.New(fmt.Sprintf("unable to format param of redis key, key: %s, param: %s", key, param))
 				return
