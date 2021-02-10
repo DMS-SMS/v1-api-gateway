@@ -25,13 +25,15 @@ type redisHandler struct {
 	client   *redis.Client
 	tracer   opentracing.Tracer
 	setTopic string
+	delTopic string
 }
 
-func RedisHandler(cli *redis.Client, tracer opentracing.Tracer, setTopic string) *redisHandler {
+func RedisHandler(cli *redis.Client, tracer opentracing.Tracer, setTopic, delTopic string) *redisHandler {
 	return &redisHandler{
 		client:   cli,
 		tracer:   tracer,
 		setTopic: setTopic,
+		delTopic: delTopic,
 	}
 }
 
