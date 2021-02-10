@@ -42,7 +42,7 @@ func (r *redisHandler) ResponderAndSetEventPublisher(key string, successStatus i
 // response value of redis key if exists instead request to service
 func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 	if key == "" {
-		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
+		systemlog.Fatalln("parameter of ResponderIfKeyExist to get redis key must not be blank string")
 	}
 	ctx := context.Background()
 
@@ -105,9 +105,10 @@ func (r *redisHandler) ResponderIfKeyExist(key string) gin.HandlerFunc {
 	}
 }
 
+// publish set redis key event with request payload if success status
 func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) gin.HandlerFunc {
 	if key == "" {
-		systemlog.Fatalln("parameter of ResponseIfExistWithKey to set redis key must not be blank string")
+		systemlog.Fatalln("parameter of SetResponseEventPublisher to set redis key must not be blank string")
 	}
 	ctx := context.Background()
 
