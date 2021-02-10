@@ -168,6 +168,73 @@ func (r *redisHandler) SetResponseEventPublisher(key string, successStatus int) 
 	}
 }
 
+// publish delete redis key event with keys if success status
+func (r *redisHandler) DeleteKeyEventPublisher(keys[] string, successStatus int) gin.HandlerFunc {
+	for _, key := range keys {
+		if key == "" {
+			systemlog.Fatalln("parameter of DeleteKeyEventPublisher to delete redis key must not be blank string")
+		}
+	}
+	ctx := context.Background()
+
+	return func(c *gin.Context) {
+		// run business logic handler
+		c.Next()
+
+		reqID := c.GetHeader("X-Request-Id")
+
+		inAdvanceTopSpan, _ := c.Get("TopSpan")
+		topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+		inAdvanceClaims, _ := c.Get("Claims")
+		uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+
+		inAdvanceReq, _ := c.Get("Request")
+
+		redisSpan := r.tracer.StartSpan("PublishDeleteEvent", opentracing.ChildOf(topSpan.Context())).SetTag("X-Request-Id", reqID)
+		var status int
+		switch w := c.Writer.(type) {
+		case *ginHResponseWriter:
+			status = w.status
+		default:
+			err := errors.New("unable to get response status code from default response writer")
+			redisSpan.SetTag("success", false).LogFields(log.Object("keys", keys), log.Error(err))
+			redisSpan.Finish()
+			return
+		}
+
+		if status != successStatus {
+			err := errors.New("response status code is not success status code to delete key in redis")
+			redisSpan.SetTag("success", false).LogFields(log.Object("keys", keys), log.Error(err))
+			redisSpan.Finish()
+			return
+		}
+
+		redisKeys := make([]string, len(keys))
+		for i, key := range keys {
+			redisKey, err := r.formatKeyWithRequest(key, c, inAdvanceReq, uuidClaims)
+			if err != nil {
+				redisSpan.SetTag("success", false).LogFields(log.String("key", redisKey), log.Error(err))
+				redisSpan.Finish()
+				return
+			}
+			redisKeys[i] = redisKey
+
+			_, err = r.client.Publish(ctx, r.delTopic, redisKey).Result()
+			if err != nil {
+				redisSpan.SetTag("success", false).LogFields(log.String("topic", r.delTopic),
+					log.String("key", redisKey), log.Error(err))
+				redisSpan.Finish()
+				return
+			}
+		}
+
+		redisSpan.LogFields(log.String("topic", r.delTopic), log.Object("keys", redisKeys))
+		redisSpan.Finish()
+		return
+	}
+}
+
 func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims ...jwtutil.UUIDClaims) (redisKey string, err error) {
 	reqValue := reflect.ValueOf(req).Elem()
 	separatedKey := strings.Split(key, ".")
