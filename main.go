@@ -250,7 +250,7 @@ func main() {
 	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid/card", defaultHandler.GetCardAboutOuting,
 		redisHandler.ResponderAndSetEventPublisher("outings.$outing_uuid.card", http.StatusOK)...)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting,
-		redisHandler.DeleteKeyEventPublisher([]string{"outings.$outing_uuid", "students.*.outings", "outings"}, http.StatusOK))
+		redisHandler.DeleteKeyEventPublisher([]string{"outings.$outing_uuid", "students.{outings.$outing_uuid.student_uuid}.outings", "outings"}, http.StatusOK))
 	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter,
 		redisHandler.ResponderAndSetEventPublisher("outings.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor", http.StatusOK)...)
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
