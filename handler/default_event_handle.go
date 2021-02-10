@@ -12,10 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	log "github.com/micro/go-micro/v2/logger"
+	"regexp"
 	"time"
 )
 
-var ctx = context.Background()
+var (
+	ctx = context.Background()
+
+	studentOutingsRegex = regexp.MustCompile("^students.student-\\d{12}.outings$")
+	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
+	allOutingsRegex = regexp.MustCompile("^outings$")
+	outingRegex = regexp.MustCompile("^outings.outing-\\d{12}$")
+)
 
 func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
 	err = h.consulAgent.ChangeAllServiceNodes()
