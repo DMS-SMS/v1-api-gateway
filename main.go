@@ -257,11 +257,16 @@ func main() {
 
 	// routing schedule service API
 	scheduleRouter := router.CustomGroup("/", middleware.LogEntrySetter(scheduleLogger))
-	scheduleRouter.POSTWithAuth("/v1/schedules", defaultHandler.CreateSchedule)
-	scheduleRouter.GETWithAuth("/v1/schedules/years/:year/months/:month", defaultHandler.GetSchedule)
-	scheduleRouter.GETWithAuth("/v1/time-tables/years/:year/months/:month/days/:day", defaultHandler.GetTimeTable)
-	scheduleRouter.PATCHWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.UpdateSchedule)
-	scheduleRouter.DELETEWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.DeleteSchedule)
+	scheduleRouter.POSTWithAuth("/v1/schedules", defaultHandler.CreateSchedule,
+		redisHandler.DeleteKeyEventPublisher([]string{"schedules"}, http.StatusCreated))
+	scheduleRouter.GETWithAuth("/v1/schedules/years/:year/months/:month", defaultHandler.GetSchedule,
+		redisHandler.ResponderAndSetEventPublisher("schedules.years.$Year.months.$Month", http.StatusOK)...)
+	scheduleRouter.GETWithAuth("/v1/time-tables/years/:year/months/:month/days/:day", defaultHandler.GetTimeTable,
+		redisHandler.ResponderAndSetEventPublisher("students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day", http.StatusOK)...)
+	scheduleRouter.PATCHWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.UpdateSchedule,
+		redisHandler.DeleteKeyEventPublisher([]string{"schedules"}, http.StatusOK))
+	scheduleRouter.DELETEWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.DeleteSchedule,
+		redisHandler.DeleteKeyEventPublisher([]string{"schedules"}, http.StatusOK))
 
 	// routing announcement service API
 	announcementRouter := router.CustomGroup("/", middleware.LogEntrySetter(announcementLogger))
