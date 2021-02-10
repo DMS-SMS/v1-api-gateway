@@ -64,6 +64,14 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 // delete all redis key associated with message payload using regexp
 func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 	var payload, pattern = msg.Payload, ""
+	payload = paramStringRegex.ReplaceAllStringFunc(payload, func(param string) string {
+		param = strings.TrimSuffix(strings.TrimPrefix(param, "{"), "}")
+		value, err := h.redisClient.Get(ctx, param).Result()
+		if err != nil {
+			return "*"
+		}
+		return value
+	})
 
 	switch true {
 	case studentOutingsRegex.MatchString(payload):
