@@ -242,7 +242,7 @@ func main() {
 	// routing outing service API
 	outingRouter := router.CustomGroup("/", middleware.LogEntrySetter(outingLogger))
 	outingRouter.POSTWithAuth("/v1/outings", defaultHandler.CreateOuting,
-		redisHandler.DeleteKeyEventPublisher([]string{"students.$TokenUUID.outings", "outings"}, http.StatusCreated))
+		redisHandler.DeleteKeyEventPublisher([]string{"students.$TokenUUID.outings", "outings.filter"}, http.StatusCreated))
 	outingRouter.GETWithAuth("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings,
 		redisHandler.ResponderAndSetEventPublisher("students.$student_uuid.outings.start.$Start.count.$Count", http.StatusOK)...)
 	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.GetOutingInform,
@@ -250,9 +250,9 @@ func main() {
 	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid/card", defaultHandler.GetCardAboutOuting,
 		redisHandler.ResponderAndSetEventPublisher("outings.$outing_uuid.card", http.StatusOK)...)
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting,
-		redisHandler.DeleteKeyEventPublisher([]string{"outings.$outing_uuid", "students.{outings.$outing_uuid.student_uuid}.outings", "outings"}, http.StatusOK))
+		redisHandler.DeleteKeyEventPublisher([]string{"outings.$outing_uuid", "outings.$outing_uuid.card", "students.{outings.$outing_uuid.student_uuid}.outings", "outings.filter"}, http.StatusOK))
 	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter,
-		redisHandler.ResponderAndSetEventPublisher("outings.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor", http.StatusOK)...)
+		redisHandler.ResponderAndSetEventPublisher("outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor", http.StatusOK)...)
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
 
 	// routing schedule service API
