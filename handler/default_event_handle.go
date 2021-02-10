@@ -28,6 +28,7 @@ var (
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
 	outingsFilterRegex = regexp.MustCompile("^outings.filter$")
 	outingRegex = regexp.MustCompile("^outings.outing-\\d{12}$")
+	outingCardRegex = regexp.MustCompile("^outings.outing-\\d{12}.card$")
 
 	// schedule regex
 	schedulesRegex = regexp.MustCompile("^schedules$")
@@ -102,20 +103,24 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 
 	case allStudentsOutingsRegex.MatchString(payload):
 		// ex) student.*.outings -> "students.*.outings.start.*.count.*"
-		pattern = "students.*.outings.start.*.count.*"
+		pattern = fmt.Sprintf("%s", "students.*.outings.start.*.count.*")
 
 	case outingsFilterRegex.MatchString(payload):
 		// ex) outings.filter -> outings.filter.start.*.count.*.status.*.grade.*.group.*.floor.*
 		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
 
 	case outingRegex.MatchString(payload):
-		// ex) outings.outing-123412341234 -> outings.outing-123412341234*
-		pattern = fmt.Sprintf("%s*", payload)
+		// ex) outings.outing-123412341234 -> outings.outing-123412341234
+		pattern = fmt.Sprintf("%s", payload)
+
+	case outingCardRegex.MatchString(payload):
+		// ex) outings.outing-123412341234.card -> outings.outing-123412341234.card
+		pattern = fmt.Sprintf("%s", payload)
 
 	case schedulesRegex.MatchString(payload):
 		// ex) schedules -> schedules*
 		pattern = fmt.Sprintf("%s*", payload)
-		
+
 	default:
 		err = errors.New(fmt.Sprintf("message does not match any regular expressions, msg payload: %s", payload))
 		return
