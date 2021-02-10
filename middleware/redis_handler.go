@@ -236,7 +236,10 @@ func (r *redisHandler) DeleteKeyEventPublisher(keys[] string, successStatus int)
 }
 
 func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req interface{}, claims ...jwtutil.UUIDClaims) (redisKey string, err error) {
-	reqValue := reflect.ValueOf(req).Elem()
+	var reqValue reflect.Value
+	if req != nil {
+		reqValue = reflect.ValueOf(req).Elem()
+	}
 	separatedKey := strings.Split(key, ".")
 	formatted := make([]string, len(separatedKey))
 	for i, sep := range separatedKey {
@@ -249,7 +252,7 @@ func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req inte
 			switch true {
 			case c.Param(param) != "":
 				paramValue = c.Param(param)
-			case reqValue.FieldByName(param).IsValid():
+			case req != nil && reqValue.FieldByName(param).IsValid():
 				switch field := reqValue.FieldByName(param); field.Interface().(type) {
 				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 					paramValue = strconv.Itoa(int(field.Int()))
