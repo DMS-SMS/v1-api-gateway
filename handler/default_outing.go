@@ -336,6 +336,7 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 			"end_time":         rpcResp.EndTime,
 			"outing_situation": rpcResp.OutingSituation,
 			"outing_status":    rpcResp.OutingStatus,
+			"student_uuid":     rpcResp.StudentUuid,
 		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
