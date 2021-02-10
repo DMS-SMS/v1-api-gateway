@@ -31,6 +31,7 @@ var (
 
 	// schedule regex
 	schedulesRegex = regexp.MustCompile("^schedules$")
+	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}$")
 
 	studentUUIDRegex = regexp.MustCompile("^student-\\d{12}$")
 )
@@ -76,6 +77,8 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 		}
 		key = fmt.Sprintf("%s.student_uuid", key)
 		h.redisClient.Set(ctx, key, sid, 0)
+	case timetableRegex.MatchString(key):
+		h.redisClient.Set(ctx, key, string(respBytes), 0)
 	}
 	return
 }
