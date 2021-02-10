@@ -21,7 +21,7 @@ var (
 
 	studentOutingsRegex = regexp.MustCompile("^students.student-\\d{12}.outings$")
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
-	allOutingsRegex = regexp.MustCompile("^outings$")
+	outingsRegex = regexp.MustCompile("^outings$")
 	outingRegex = regexp.MustCompile("^outings.outing-\\d{12}$")
 )
 
@@ -60,6 +60,29 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 
 // delete all redis key associated with message payload using regexp
 func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
+	var payload, pattern = msg.Payload, ""
+
+	switch true {
+	case studentOutingsRegex.MatchString(payload):
+		pattern = fmt.Sprintf("%s.start.*.count.*", payload)
+	case allStudentsOutingsRegex.MatchString(payload):
+		pattern = "students.*.outings.start.*.count.*"
+	case outingsRegex.MatchString(payload):
+		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
+	case outingRegex.MatchString(payload):
+		pattern = fmt.Sprintf("%s*", payload)
+	default:
+		err = errors.New(fmt.Sprintf("message does not match any regular expressions, msg payload: %s", payload))
+		return
+	}
+
+	num, err := h.deleteRedisKeyWithPattern(pattern)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("some error occurs while delete redis key with pattern, pattern: %s, err: %v", pattern, err))
+		return
+	}
+
+	log.Infof("delete all redis key with pattern!, msg payload: %s pattern: %s, matched key num: %d", payload, pattern, num)
 	return 
 }
 
@@ -79,11 +102,5 @@ func (h *_default) deleteRedisKeyWithPattern(pattern string) (num int, err error
 		}
 	}
 
-	log.Infof("delete all redis key with pattern!, pattern: %s, matched key num: %d", pattern, len(keys))
 	return
 }
-
-// sey new redis key with key name & value sent from redis pub/sub
-//func (h *_default) SetNewRedisKey(msg *redis.Message) (err error) {
-//
-//}
