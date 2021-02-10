@@ -13,6 +13,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	log "github.com/micro/go-micro/v2/logger"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,8 @@ var (
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
 	outingsRegex = regexp.MustCompile("^outings$")
 	outingRegex = regexp.MustCompile("^outings.outing-\\d{12}$")
+
+	studentUUIDRegex = regexp.MustCompile("^student-\\d{12}$")
 )
 
 func (h *_default) ChangeConsulNodes(message *sqs.Message) (err error) {
@@ -56,8 +59,20 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 		err = errors.New(fmt.Sprintf("unable to set response in redis key, err: %v", err))
 		return
 	}
-
 	log.Infof("succeed to set response in redis key!, key: %s, result: %s", key, result)
+
+	switch true {
+	case outingRegex.MatchString(key):
+		if _, ok := resp["student_uuid"]; !ok {
+			return
+		}
+		sid, ok := resp["student_uuid"].(string)
+		if !ok || !studentUUIDRegex.MatchString(sid) {
+			return
+		}
+		key = fmt.Sprintf("%s.student_uuid", key)
+		h.redisClient.Set(ctx, key, sid, 0)
+	}
 	return
 }
 
