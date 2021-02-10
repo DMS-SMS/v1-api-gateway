@@ -23,6 +23,7 @@ var (
 	// check if payload contains {} for param
 	paramStringRegex = regexp.MustCompile("{.*}")
 
+	// outing regex
 	studentOutingsRegex = regexp.MustCompile("^students.student-\\d{12}.outings$")
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
 	outingsRegex = regexp.MustCompile("^outings$")
@@ -90,13 +91,21 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 
 	switch true {
 	case studentOutingsRegex.MatchString(payload):
+		// ex) student.student-123412341234.outings -> "students.student-123412341234.outings.start.*.count.*"
 		pattern = fmt.Sprintf("%s.start.*.count.*", payload)
+
 	case allStudentsOutingsRegex.MatchString(payload):
+		// ex) student.*.outings -> "students.*.outings.start.*.count.*"
 		pattern = "students.*.outings.start.*.count.*"
+
 	case outingsRegex.MatchString(payload):
+		// ex) outings -> outings.start.*.count.*.status.*.grade.*.group.*.floor.*
 		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
+
 	case outingRegex.MatchString(payload):
+		// ex) outings.outing-123412341234 -> outings.outing-123412341234*
 		pattern = fmt.Sprintf("%s*", payload)
+		
 	default:
 		err = errors.New(fmt.Sprintf("message does not match any regular expressions, msg payload: %s", payload))
 		return
