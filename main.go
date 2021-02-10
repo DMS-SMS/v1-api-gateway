@@ -121,7 +121,7 @@ func main() {
 
 	// create subscriber & register aws sqs, redis listener (add in v.1.0.2)
 	consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
-	redisDeleteTopic := env.GetAndFatalIfNotExits("REDIS_DELETE_TOPIC")
+	redisDelTopic := env.GetAndFatalIfNotExits("REDIS_DELETE_TOPIC")
 	redisSetTopic := env.GetAndFatalIfNotExits("REDIS_SET_TOPIC")
 	subscriber.SetAwsSession(awsSession)
 	subscriber.SetRedisClient(redisCli)
@@ -134,7 +134,7 @@ func main() {
 			MaxNumberOfMessages: aws.Int64(10),
 			WaitTimeSeconds:     aws.Int64(2),
 		}),
-		subscriber.RedisListener(redisDeleteTopic, defaultHandler.DeleteAssociatedRedisKey, 5), // add in v.1.0.3
+		subscriber.RedisListener(redisDelTopic, defaultHandler.DeleteAssociatedRedisKey, 5), // add in v.1.0.3
 		subscriber.RedisListener(redisSetTopic, defaultHandler.SetRedisKeyWithResponse, 5), // add in v.1.0.4
 	)
 
@@ -185,7 +185,7 @@ func main() {
 		middleware.TracerSpanStarter(apiTracer),  // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
 	router.Validator = validator.New()
-	redisHandler := middleware.RedisHandler(redisCli, apiTracer, redisSetTopic)
+	redisHandler := middleware.RedisHandler(redisCli, apiTracer, redisSetTopic, redisDelTopic)
 
 	// routing auth service API
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
