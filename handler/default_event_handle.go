@@ -26,7 +26,7 @@ var (
 	// outing regex
 	studentOutingsRegex = regexp.MustCompile("^students.student-\\d{12}.outings$")
 	allStudentsOutingsRegex = regexp.MustCompile("^students.\\*.outings$")
-	outingsRegex = regexp.MustCompile("^outings$")
+	outingsFilterRegex = regexp.MustCompile("^outings.filter$")
 	outingRegex = regexp.MustCompile("^outings.outing-\\d{12}$")
 
 	// schedule regex
@@ -104,8 +104,8 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 		// ex) student.*.outings -> "students.*.outings.start.*.count.*"
 		pattern = "students.*.outings.start.*.count.*"
 
-	case outingsRegex.MatchString(payload):
-		// ex) outings -> outings.start.*.count.*.status.*.grade.*.group.*.floor.*
+	case outingsFilterRegex.MatchString(payload):
+		// ex) outings.filter -> outings.filter.start.*.count.*.status.*.grade.*.group.*.floor.*
 		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
 
 	case outingRegex.MatchString(payload):
