@@ -38,6 +38,31 @@ func (r *redisHandler) GetOutingWithFilter() []gin.HandlerFunc {
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 
+func (r *redisHandler) CreateSchedule() []gin.HandlerFunc {
+	redisDelKeys := []string{"schedules"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusCreated)}
+}
+
+func (r *redisHandler) GetSchedule() []gin.HandlerFunc {
+	redisSetKey := "schedules.years.$Year.months.$Month"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) GetTimeTable() []gin.HandlerFunc {
+	redisSetKey := "students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) UpdateSchedule() []gin.HandlerFunc {
+	redisDelKeys := []string{"schedules"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusOK)}
+}
+
+func (r *redisHandler) DeleteSchedule() []gin.HandlerFunc {
+	redisDelKeys := []string{"schedules"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusOK)}
+}
+
 func (r *redisHandler) CreateAnnouncement() []gin.HandlerFunc {
 	redisDelKeys := []string{"announcements.uuid.*.types.$Type", "students.*.announcement-check", "writers.$TokenUUID.announcements"}
 	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusCreated)}
