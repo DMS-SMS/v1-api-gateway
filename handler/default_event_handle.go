@@ -36,6 +36,7 @@ var (
 
 	// announcement regex
 	announcementRegex = regexp.MustCompile("^announcements.announcement-\\d{12}$")
+	typeValueRegex = regexp.MustCompile("^school|club$")
 	announcementsRegex = regexp.MustCompile("^announcements.uuid.*.types.(school|club|\\*)$")
 	announcementCheckRegex = regexp.MustCompile("^students.*.announcement-check$")
 	myAnnouncementRegex = regexp.MustCompile("^writers.*.announcements$")
@@ -84,6 +85,16 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 		}
 		key = fmt.Sprintf("%s.student_uuid", key)
 		h.redisClient.Set(ctx, key, sid, 0)
+	case announcementRegex.MatchString(key):
+		if _, ok := resp["type"]; !ok {
+			return
+		}
+		_type, ok := resp["type"].(string)
+		if !ok || !typeValueRegex.MatchString(_type) {
+			return
+		}
+		key = fmt.Sprintf("%s.type", key)
+		h.redisClient.Set(ctx, key, _type, 0)
 	case timetableRegex.MatchString(key):
 		h.redisClient.Set(ctx, key, string(respBytes), 0)
 	}
