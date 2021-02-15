@@ -24,28 +24,11 @@ type serviceName string
 type consulIndex string
 
 type _default struct {
-	authService interface {
-		authproto.AuthAdminService
-		authproto.AuthStudentService
-		authproto.AuthTeacherService
-		authproto.AuthParentService
-	}
-	clubService interface {
-		clubproto.ClubAdminService
-		clubproto.ClubStudentService
-		clubproto.ClubLeaderService
-	}
-	outingService interface {
-		outingproto.OutingStudentService
-		outingproto.OutingTeacherService
-		outingproto.OutingParentsService
-	}
-	scheduleService interface {
-		scheduleproto.ScheduleService
-	}
-	announcementService interface {
-		announcementproto.AnnouncementService
-	}
+	authService authproto.AuthServiceClient
+	clubService clubproto.ClubServiceClient
+	outingService outingproto.OutingServiceClient
+	scheduleService scheduleproto.ScheduleService
+	announcementService announcementproto.AnnouncementService
 
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -96,48 +79,31 @@ func Default(setters ...FieldSetter) (h *_default) {
 
 type FieldSetter func(*_default)
 
-func AuthService(authService struct {
-	authproto.AuthAdminService
-	authproto.AuthStudentService
-	authproto.AuthTeacherService
-	authproto.AuthParentService
-}) FieldSetter {
+func AuthService(authService authproto.AuthServiceClient) FieldSetter {
 	return func(h *_default) {
 		h.authService = authService
 	}
 }
 
-func ClubService(clubService struct {
-	clubproto.ClubAdminService
-	clubproto.ClubStudentService
-	clubproto.ClubLeaderService
-}) FieldSetter {
+func ClubService(clubService clubproto.ClubServiceClient) FieldSetter {
 	return func(h *_default) {
 		h.clubService = clubService
 	}
 }
 
-func OutingService(outingService interface {
-	outingproto.OutingStudentService
-	outingproto.OutingTeacherService
-	outingproto.OutingParentsService
-}) FieldSetter {
+func OutingService(outingService outingproto.OutingServiceClient) FieldSetter {
 	return func(h *_default) {
 		h.outingService = outingService
 	}
 }
 
-func AnnouncementService(announcementService interface {
-	announcementproto.AnnouncementService
-}) FieldSetter {
+func AnnouncementService(announcementService announcementproto.AnnouncementService) FieldSetter {
 	return func(h *_default) {
 		h.announcementService = announcementService
 	}
 }
 
-func ScheduleService(scheduleService interface {
-	scheduleproto.ScheduleService
-}) FieldSetter {
+func ScheduleService(scheduleService scheduleproto.ScheduleService) FieldSetter {
 	return func(h *_default) {
 		h.scheduleService = scheduleService
 	}

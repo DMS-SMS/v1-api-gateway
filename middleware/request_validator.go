@@ -59,13 +59,25 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 			}
 		case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest, *entity.GetStudentOutingsRequest,
 			*entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
-			*entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest:
-			if err := c.ShouldBindQuery(req); err != nil {
-				respFor400["code"] = code.FailToBindRequestToStruct
-				respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
-				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
-				return
-			}
+			*entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest,
+			*entity.GetMyAnnouncementsRequest, *entity.SearchAnnouncementsRequest:
+				if err := c.ShouldBindQuery(req); err != nil {
+					respFor400["code"] = code.FailToBindRequestToStruct
+					respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
+					c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+					return
+				}
+
+				// set count field value to 10 if 0
+				if countValue := reflect.ValueOf(req).Elem().FieldByName("Count"); countValue.IsValid() {
+					switch countValue.Type().Kind() {
+					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+						reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+							if countValue.Int() == 0 {
+								countValue.SetInt(10)
+							}
+					}
+				}
 		default:
 			switch c.ContentType() {
 			case "multipart/form-data":

@@ -230,23 +230,6 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
-
-		//byteArr, _ := json.Marshal(sendResp)
-		//fmt.Println(string(byteArr))
-		//test1 := gin.H{}
-		//fmt.Println(json.Unmarshal(byteArr, &test1))
-		//fmt.Println(test1)
-		//redisSpan := h.tracer.StartSpan("GetNextServiceNode", opentracing.ChildOf(topSpan.Context()))
-		//setResult := h.redisClient.Set(context.Background(), "test", string(byteArr), time.Minute)
-		//redisSpan.SetTag("X-Request-Id", reqID).LogFields(log.String("ResultString", setResult.String()), log.Error(setResult.Err()))
-		//redisSpan.Finish()
-		//
-		//getStr, err := h.redisClient.Get(context.Background(), "test").Result()
-		//fmt.Println(getStr, err)
-		//test := gin.H{}
-		//fmt.Println(test)
-		//fmt.Println(json.Unmarshal([]byte(getStr), &test))
-		//fmt.Println(sendResp)
 	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
 		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg})
 		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Msg, "request": string(reqBytes)}).Error()
@@ -353,6 +336,7 @@ func (h *_default) GetOutingInform(c *gin.Context) {
 			"end_time":         rpcResp.EndTime,
 			"outing_situation": rpcResp.OutingSituation,
 			"outing_status":    rpcResp.OutingStatus,
+			"student_uuid":     rpcResp.StudentUuid,
 		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)

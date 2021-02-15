@@ -22,8 +22,9 @@ func GinHResponseWriter() gin.HandlerFunc {
 
 type ginHResponseWriter struct {
 	gin.ResponseWriter
-	json    gin.H      // save gin.H json response that sent in handler
-	written bool       // check if response written by this response writer
+	json    gin.H // save gin.H json response that sent in handler
+	written bool  // check if response written by this response writer
+	status  int   // set status code in WriteHeader overriding method
 }
 
 // save response(value of gin.H type) in field of ginHResponseWriter
@@ -96,4 +97,10 @@ func (w *ginHResponseWriter) Write(b []byte) (i int, e error) {
 	w.written = true
 	w.json = resp
 	return w.ResponseWriter.Write(b)
+}
+
+// save response status code in field of ginHResponseWriter
+func (w *ginHResponseWriter) WriteHeader(statusCode int) {
+	w.status = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
 }

@@ -1,4 +1,4 @@
-// create file in v.1.0.3
+// create file in v.1.0.4
 // redis.go is file that declare closure return method about listening redis message queue
 // you can also use this by registry with method in subscriber
 
@@ -23,7 +23,7 @@ func RedisListener(topic string, handler redisMsgHandler, chlSize int) func() {
 			pubMsg := <- pubChl
 			go func(msg *redis.Message) {
 				if err := handler(msg); err != nil {
-					log.Errorf("some error occurs while handling redis message, topic: %s, msg: %s err: %v", topic, pubMsg.String(), err)
+					log.Errorf("some error occurs while handling redis message, topic: %s, err: %v", topic, err)
 				}
 			}(pubMsg)
 		}

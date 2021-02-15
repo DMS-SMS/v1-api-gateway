@@ -16,12 +16,12 @@ import (
 	customrouter "gateway/router"
 	"gateway/subscriber"
 	"gateway/tool/env"
+	customlogrus "gateway/tool/logrus"
 	topic "gateway/utils/topic/golang"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -98,45 +98,11 @@ func main() {
 
 	// gRPC service client
 	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
-	authSrvCli := struct {
-		authproto.AuthAdminService
-		authproto.AuthStudentService
-		authproto.AuthTeacherService
-		authproto.AuthParentService
-	}{
-		AuthAdminService:   authproto.NewAuthAdminService(topic.AuthServiceName, gRPCCli),
-		AuthStudentService: authproto.NewAuthStudentService(topic.AuthServiceName, gRPCCli),
-		AuthTeacherService: authproto.NewAuthTeacherService(topic.AuthServiceName, gRPCCli),
-		AuthParentService:  authproto.NewAuthParentService(topic.AuthServiceName, gRPCCli),
-	}
-	clubSrvCli := struct {
-		clubproto.ClubAdminService
-		clubproto.ClubStudentService
-		clubproto.ClubLeaderService
-	}{
-		ClubAdminService:   clubproto.NewClubAdminService(topic.ClubServiceName, gRPCCli),
-		ClubStudentService: clubproto.NewClubStudentService(topic.ClubServiceName, gRPCCli),
-		ClubLeaderService:  clubproto.NewClubLeaderService(topic.ClubServiceName, gRPCCli),
-	}
-	outingSrvCli := struct {
-		outingproto.OutingStudentService
-		outingproto.OutingTeacherService
-		outingproto.OutingParentsService
-	} {
-		OutingStudentService: outingproto.NewOutingStudentService("", gRPCCli),
-		OutingTeacherService: outingproto.NewOutingTeacherService("", gRPCCli),
-		OutingParentsService: outingproto.NewOutingParentsService("", gRPCCli),
-	}
-	scheduleSrvCli := struct {
-		scheduleproto.ScheduleService
-	} {
-		ScheduleService: scheduleproto.NewScheduleService("schedule", gRPCCli),
-	}
-	announcementSrvCli := struct {
-		announcementproto.AnnouncementService
-	} {
-		AnnouncementService: announcementproto.NewAnnouncementService("announcement", gRPCCli),
-	}
+	authSrvCli := authproto.NewAuthService(topic.AuthServiceName, gRPCCli)
+	clubSrvCli := clubproto.NewClubService(topic.ClubServiceName, gRPCCli)
+	outingSrvCli := outingproto.NewOutingService("", gRPCCli)
+	scheduleSrvCli := scheduleproto.NewScheduleService("schedule", gRPCCli)
+	announcementSrvCli := announcementproto.NewAnnouncementService("announcement", gRPCCli)
 
 	// create http request & event handler
 	defaultHandler := handler.Default(
@@ -155,7 +121,8 @@ func main() {
 
 	// create subscriber & register aws sqs, redis listener (add in v.1.0.2)
 	consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
-	redisDeleteTopic := env.GetAndFatalIfNotExits("DELETE_REDIS_TOPIC")
+	redisDelTopic := env.GetAndFatalIfNotExits("REDIS_DELETE_TOPIC")
+	redisSetTopic := env.GetAndFatalIfNotExits("REDIS_SET_TOPIC")
 	subscriber.SetAwsSession(awsSession)
 	subscriber.SetRedisClient(redisCli)
 	defaultSubscriber := subscriber.Default()
@@ -167,39 +134,20 @@ func main() {
 			MaxNumberOfMessages: aws.Int64(10),
 			WaitTimeSeconds:     aws.Int64(2),
 		}),
-		subscriber.RedisListener(redisDeleteTopic, defaultHandler.DeleteRedisKeyWithPattern, 5), // add in v.1.0.3
+		subscriber.RedisListener(redisDelTopic, defaultHandler.DeleteAssociatedRedisKey, 5), // add in v.1.0.3
+		subscriber.RedisListener(redisSetTopic, defaultHandler.SetRedisKeyWithResponse, 5), // add in v.1.0.4
 	)
 
-	// create log file
+	// create logger & add hooks
 	if _, err := os.Stat("/usr/share/filebeat/log/dms-sms"); os.IsNotExist(err) {
 		if err = os.MkdirAll("/usr/share/filebeat/log/dms-sms", os.ModePerm); err != nil { log.Fatal(err) }
 	}
-	authLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/auth.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	clubLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/club.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	outingLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/outing.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	scheduleLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/schedule.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	announcementLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/announcement.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-	openApiLog, err := os.OpenFile("/usr/share/filebeat/log/dms-sms/open-api.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
-	if err != nil { log.Fatal(err) }
-
-	// create logger & add hooks
-	authLogger := logrus.New()
-	authLogger.Hooks.Add(logrustash.New(authLog, logrustash.DefaultFormatter(logrus.Fields{"service": "auth"})))
-	clubLogger := logrus.New()
-	clubLogger.Hooks.Add(logrustash.New(clubLog, logrustash.DefaultFormatter(logrus.Fields{"service": "club"})))
-	outingLogger := logrus.New()
-	outingLogger.Hooks.Add(logrustash.New(outingLog, logrustash.DefaultFormatter(logrus.Fields{"service": "outing"})))
-	scheduleLogger := logrus.New()
-	scheduleLogger.Hooks.Add(logrustash.New(scheduleLog, logrustash.DefaultFormatter(logrus.Fields{"service": "schedule"})))
-	announcementLogger := logrus.New()
-	announcementLogger.Hooks.Add(logrustash.New(announcementLog, logrustash.DefaultFormatter(logrus.Fields{"service": "announcement"})))
-	openApiLogger := logrus.New()
-	openApiLogger.Hooks.Add(logrustash.New(openApiLog, logrustash.DefaultFormatter(logrus.Fields{"service": "open-api"})))
+	authLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/auth.log", logrus.Fields{"service": "auth"})
+	clubLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/club.log", logrus.Fields{"service": "club"})
+	outingLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/outing.log", logrus.Fields{"service": "outing"})
+	scheduleLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/schedule.log", logrus.Fields{"service": "schedule"})
+	announcementLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/announcement.log", logrus.Fields{"service": "announcement"})
+	openApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/open-api.log", logrus.Fields{"service": "open-api"})
 
 	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
@@ -237,6 +185,7 @@ func main() {
 		middleware.TracerSpanStarter(apiTracer),  // start, end top span of tracer & set log, tag about response (add in v.1.0.3)
 	)
 	router.Validator = validator.New()
+	redisHandler := middleware.RedisHandler(redisCli, apiTracer, redisSetTopic, redisDelTopic)
 
 	// routing auth service API
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
@@ -292,32 +241,32 @@ func main() {
 
 	// routing outing service API
 	outingRouter := router.CustomGroup("/", middleware.LogEntrySetter(outingLogger))
-	outingRouter.POSTWithAuth("/v1/outings", defaultHandler.CreateOuting)
-	outingRouter.GETWithAuth("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings)
-	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.GetOutingInform)
-	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid/card", defaultHandler.GetCardAboutOuting)
-	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting)
-	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter)
+	outingRouter.POSTWithAuth("/v1/outings", defaultHandler.CreateOuting, redisHandler.CreateOuting()...)
+	outingRouter.GETWithAuth("/v1/students/uuid/:student_uuid/outings", defaultHandler.GetStudentOutings, redisHandler.GetStudentOutings()...)
+	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.GetOutingInform, redisHandler.GetOutingInform()...)
+	outingRouter.GETWithAuth("/v1/outings/uuid/:outing_uuid/card", defaultHandler.GetCardAboutOuting, redisHandler.GetCardAboutOuting()...)
+	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting, redisHandler.TakeActionInOuting()...)
+	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter, redisHandler.GetOutingWithFilter()...)
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
 
 	// routing schedule service API
 	scheduleRouter := router.CustomGroup("/", middleware.LogEntrySetter(scheduleLogger))
-	scheduleRouter.POSTWithAuth("/v1/schedules", defaultHandler.CreateSchedule)
-	scheduleRouter.GETWithAuth("/v1/schedules/years/:year/months/:month", defaultHandler.GetSchedule)
-	scheduleRouter.GETWithAuth("/v1/time-tables/years/:year/months/:month/days/:day", defaultHandler.GetTimeTable)
-	scheduleRouter.PATCHWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.UpdateSchedule)
-	scheduleRouter.DELETEWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.DeleteSchedule)
+	scheduleRouter.POSTWithAuth("/v1/schedules", defaultHandler.CreateSchedule, redisHandler.CreateSchedule()...)
+	scheduleRouter.GETWithAuth("/v1/schedules/years/:year/months/:month", defaultHandler.GetSchedule, redisHandler.GetSchedule()...)
+	scheduleRouter.GETWithAuth("/v1/time-tables/years/:year/months/:month/days/:day", defaultHandler.GetTimeTable, redisHandler.GetTimeTable()...)
+	scheduleRouter.PATCHWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.UpdateSchedule, redisHandler.UpdateSchedule()...)
+	scheduleRouter.DELETEWithAuth("/v1/schedules/uuid/:schedule_uuid", defaultHandler.DeleteSchedule, redisHandler.DeleteSchedule()...)
 
 	// routing announcement service API
 	announcementRouter := router.CustomGroup("/", middleware.LogEntrySetter(announcementLogger))
-	announcementRouter.POSTWithAuth("/v1/announcements", defaultHandler.CreateAnnouncement)
-	announcementRouter.GETWithAuth("/v1/announcements/types/:type", defaultHandler.GetAnnouncements)
-	announcementRouter.GETWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.GetAnnouncementDetail)
-	announcementRouter.PATCHWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.UpdateAnnouncement)
-	announcementRouter.DELETEWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.DeleteAnnouncement)
-	announcementRouter.GETWithAuth("/v1/students/uuid/:student_uuid/announcement-check", defaultHandler.CheckAnnouncement)
-	announcementRouter.GETWithAuth("/v1/announcements/types/:type/query/:search_query", defaultHandler.SearchAnnouncements)
-	announcementRouter.GETWithAuth("/v1/announcements/writer-uuid/:writer_uuid", defaultHandler.GetMyAnnouncements)
+	announcementRouter.POSTWithAuth("/v1/announcements", defaultHandler.CreateAnnouncement, redisHandler.CreateAnnouncement()...)
+	announcementRouter.GETWithAuth("/v1/announcements/types/:type", defaultHandler.GetAnnouncements, redisHandler.GetAnnouncements()...)
+	announcementRouter.GETWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.GetAnnouncementDetail, redisHandler.GetAnnouncementDetail()...)
+	announcementRouter.PATCHWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.UpdateAnnouncement, redisHandler.UpdateAnnouncement()...)
+	announcementRouter.DELETEWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.DeleteAnnouncement, redisHandler.DeleteAnnouncement()...)
+	announcementRouter.GETWithAuth("/v1/students/uuid/:student_uuid/announcement-check", defaultHandler.CheckAnnouncement, redisHandler.CheckAnnouncement()...)
+	announcementRouter.GETWithAuth("/v1/announcements/types/:type/query/:search_query", defaultHandler.SearchAnnouncements, redisHandler.SearchAnnouncements()...)
+	announcementRouter.GETWithAuth("/v1/announcements/writer-uuid/:writer_uuid", defaultHandler.GetMyAnnouncements, redisHandler.GetMyAnnouncements()...)
 
 	// routing open-api agent API
 	openApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(openApiLogger))
