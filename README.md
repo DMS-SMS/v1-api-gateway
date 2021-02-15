@@ -1,5 +1,9 @@
 # **DMS-SMS/V1**
 > ### API Gateway 이외의 서비스들에 대한 Repository는 [**서비스 분해**](#서비스-분해) 부분에서 확인하실 수 있습니다!
+
+<br>
+
+---
 ## **INDEX**
 ### [**1. DMS-SMS란?**](#DMS-SMS란?)
 ### [**2. 서비스 기능**](#서비스-기능)
@@ -9,14 +13,16 @@
 
 <br>
 
+---
 ## **[DMS-SMS](https://github.com/DMS-SMS)란?**
 - SMS는 **School Management System**의 약어로, **학교 관리 시스템**을 의미합니다!
 
-- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 **DMS**에서 **5기 부원들**(현 2020년 기준 2학년)이 개발하는 새로운 서비스입니다.
+- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 [**DMS**](https://github.com/DSM-DMS)에서 **5기 부원들**(현 2020년 기준 2학년)이 개발하는 새로운 서비스입니다.
 - **서버 개발**에는 현재 README.md를 작성중인 [**박진홍(PM)**](https://github.com/parkjinhong03)과 [**손민기**](https://github.com/mallycrip) 학생이 참여해 주었고, **MSA 기반**의 서버를 개발하였고 현재 운영중입니다.
 
 <br>
 
+---
 ## **서비스 기능**
 1. ### **외출증 서비스**
     - 저희 서비스의 **주기능**으로, 오프라인 형식이였던 **기존의 외출 프로세스**를 **온라인 형식**으로 만든 것 입니다.
@@ -36,6 +42,7 @@
 
 <br>
 
+---
 ## **서비스 분해**
 > API Gateway에 대한 **HTTP API** 및 gRPC 서비스들에 대한 **RPC API**에 대해 **설계한 내용**들은 [**HTTP API 설계**](https://www.notion.so/API-1498b7b706ad4a5284fbc9567a8184be)와 [**RPC API(Proto) 설계**](https://www.notion.so/RPC-API-Proto-710988a1fc3744a3bf2df7f6ee3762ce)에서  추가로 확인하실 수 있습니다.
 
@@ -78,6 +85,7 @@
 
 <br>
 
+---
 ## **API Gateway 기능**
 1. ### **요청 유효성 검사**
     - 서버에 전송한 payload에 꼭 필요한 **데이터가 다 존재**하는지, **데이터 제약조건**은 다 만족했는지 확인 *(x -> 400 Bad Request)* 
@@ -107,6 +115,7 @@
 
 <br>
 
+---
 ## **배포 방식**
 **(2020-09-19)**
 - ~~각각의 서비스들은 **AWS EKS 클러스터**의 **노드**마다 하나씩 **Public Subnet**및 **Private Subnet**에 알맞게 배치되어 실행중입니다.~~
