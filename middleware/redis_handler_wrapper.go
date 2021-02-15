@@ -97,11 +97,11 @@ func (r *redisHandler) CheckAnnouncement() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) SearchAnnouncements() []gin.HandlerFunc {
-	redisSetKey := "announcements.uuid.$TokenUUID.types.$type.query.$search_query.start.$Start.count,$Count"
+	redisSetKey := "announcements.uuid.$TokenUUID.types.$type.query.$search_query.start.$Start.count.$Count"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 
 func (r *redisHandler) GetMyAnnouncements() []gin.HandlerFunc {
-	redisSetKey := "writers.$writer_uuid.announcements"
+	redisSetKey := "writers.$writer_uuid.announcements.start.$Start.count.$Count"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
