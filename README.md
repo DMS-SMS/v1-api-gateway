@@ -16,9 +16,9 @@
 
 ---
 ## **[DMS-SMS](https://github.com/DMS-SMS)란?**
-- SMS는 **School Management System**의 약어로, **학교 관리 시스템**을 의미합니다!
+- SMS는 **School Management System**의 약어로, 실제로 학생들을 대상으로 운영중인 **학교 관리 시스템**을 의미합니다
 
-- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 [**DMS**](https://github.com/DSM-DMS)에서 **5기 부원들**(현 2020년 기준 2학년)이 개발하는 새로운 서비스입니다.
+- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 [**DMS**](https://github.com/DSM-DMS)에서 **5기 부원들**(현 2021년 기준 3학년)이 개발하는 새로운 서비스입니다.
 - **서버 개발**에는 현재 README.md를 작성중인 [**박진홍(PM)**](https://github.com/parkjinhong03)과 [**손민기**](https://github.com/mallycrip) 학생이 참여해 주었고, **MSA 기반**의 서버를 개발하였고 현재 운영중입니다.
 
 <br>
@@ -92,8 +92,8 @@
     - 서버에 전송한 payload에 꼭 필요한 **데이터가 다 존재**하는지, **데이터 제약조건**은 다 만족했는지 확인 *(x -> 400 Bad Request)* 
 
 2. ### **인증 처리**
-    - **토큰**이 헤더에 **존재**하고 **유효**한지, 해당 토큰의 payload의 uuid에 해당되는 **사용자가 존재하는지** 확인 *(X -> 401 Unauthorized)*
-    - 호출한 서비스가 본인 계정의 권한으로 **접근이 가능한 서비스인지** 확인 *(X -> 403 Forbidden)*
+    - **토큰**이 헤더에 **존재**하고 **유효**한지, 해당 토큰의 payload의 형식이 옳바른지 확인 *(X -> 401 Unauthorized)*
+    - ~~호출한 서비스가 본인 계정의 권한으로 **접근이 가능한 서비스인지** 확인 *(X -> 403 Forbidden)*~~
 
 3. ### **서비스 탐색 및 부하 분산**
     > 참고로 서비스의 **장애를 방지**하고 **크기를 동적으로 조정**하기 위해 이 **Service Discovery**를 **유연하게** 사용할 줄 알아야 함!
@@ -107,12 +107,20 @@
         - **차단기 열림** -> Service Discovery의 Health Check을 Fatal로 변경 **(조회 X)**
         - **차단기 닫힘** -> Service Discovery의 Health Check을 Pass로 변경 **(조회 O)**
 
-5. ### **Dos 공격 대비**
-    - **동일한 IP**의 요청이 1초에 10개 이상 들어올 경우, **해당 IP 차단** 및 앞으로의 요청 **403 Forbidden 반환** *(10개 이상 들어온 시점 -> 429 Too Many Request)*
+5. ### ~~**Dos 공격 대비**~~
+    - **동일한 IP**의 요청이 1초에 특정 횟수 이상 들어올 경우, **해당 IP 차단** 및 앞으로의 요청 **403 Forbidden 반환** *(특정 횟수 이상 시점 이후의 요청 -> 429 Too Many Request)*
 
 6. ### **관측성 패턴 적용**
     - **ELK Stack**(Elasticsearch + Logstash + Kibana + Filebeat)로 구성된 로그 시스템에 **로그 작성**
     - 외부 API에 대한 **지연 시간** 및 **응답 결과**를 작성하기 위한 **Distributed Trace**(jaeger 사용)를 시작하기 위해 Span 생성 및 Metadata로 다음 서비스에 Span-Context 전달
+
+8. ### ~~**속도 제한**~~
+    - 서비스별로 1초간 수용될 수 있는 **요청의 최대 횟수 설정** *(해당 횟수 초과 -> 429 Too Many Request)*
+
+7. ### **HTTP API 응답 캐싱**
+    - 리소스가 비교적 많이 소모되는 API들의 성능 향상을 위해 **응답 redis에 저장** (만료 시간 -> 1분)
+    - 응답 **캐시가 존재**하면 해당 **캐시를 반환**하고, 특정 캐시의 **변경이 감지**되면 해당 **캐시 삭제**
+
 
 <br>
 
