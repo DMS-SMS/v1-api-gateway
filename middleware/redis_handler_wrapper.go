@@ -102,6 +102,6 @@ func (r *redisHandler) SearchAnnouncements() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) GetMyAnnouncements() []gin.HandlerFunc {
-	redisSetKey := "writers.$writer_uuid.announcements"
+	redisSetKey := "writers.$writer_uuid.announcements.start.$Start.count.$Count"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
