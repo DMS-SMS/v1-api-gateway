@@ -34,6 +34,12 @@ var (
 	schedulesRegex = regexp.MustCompile("^schedules$")
 	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}$")
 
+	// announcement regex
+	announcementRegex = regexp.MustCompile("^announcements.announcement-\\d{12}$")
+	announcementsRegex = regexp.MustCompile("^announcements.uuid.*.types.(school|club|\\*)$")
+	announcementCheckRegex = regexp.MustCompile("^students.*.announcement-check$")
+	myAnnouncementRegex = regexp.MustCompile("^writers.*.announcements$")
+
 	studentUUIDRegex = regexp.MustCompile("^student-\\d{12}$")
 )
 
