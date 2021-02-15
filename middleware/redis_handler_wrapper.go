@@ -8,6 +8,36 @@ import (
 	"net/http"
 )
 
+func (r *redisHandler) CreateOuting() []gin.HandlerFunc {
+	redisDelKeys := []string{"students.$TokenUUID.outings", "outings.filter"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusCreated)}
+}
+
+func (r *redisHandler) GetStudentOutings() []gin.HandlerFunc {
+	redisSetKey := "students.$student_uuid.outings.start.$Start.count.$Count"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) GetOutingInform() []gin.HandlerFunc {
+	redisSetKey := "outings.$outing_uuid"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) GetCardAboutOuting() []gin.HandlerFunc {
+	redisSetKey := "outings.$outing_uuid.card"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) TakeActionInOuting() []gin.HandlerFunc {
+	redisDelKeys := []string{"outings.$outing_uuid", "outings.$outing_uuid.card", "students.{outings.$outing_uuid.student_uuid}.outings", "outings.filter"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusOK)}
+}
+
+func (r *redisHandler) GetOutingWithFilter() []gin.HandlerFunc {
+	redisSetKey := "outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor"
+	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
 func (r *redisHandler) CreateAnnouncement() []gin.HandlerFunc {
 	redisDelKeys := []string{"announcements.uuid.*.types.$Type", "students.*.announcement-check", "writers.$TokenUUID.announcements"}
 	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusCreated)}
