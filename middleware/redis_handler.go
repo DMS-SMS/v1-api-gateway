@@ -248,7 +248,7 @@ func (r *redisHandler) formatKeyWithRequest(key string, c *gin.Context, req inte
 	for i, sep := range separatedKey {
 		if strings.HasPrefix(sep, "$") {
 			param := strings.TrimPrefix(sep, "$")
-			if param == "student_uuid" && c.Param(param) != claims.UUID {
+			if (param == "student_uuid" || param == "writer_uuid") && c.Param(param) != claims.UUID {
 				return
 			}
 			var paramValue string
