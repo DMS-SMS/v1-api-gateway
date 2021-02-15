@@ -10,6 +10,7 @@
 ### [**3. 서비스 분해**](#서비스-분해)
 ### [**4. API Gateway 기능**](#API-Gateway-기능)
 ### [**5. 배포 방식**](#배포-방식)
+### [**6. 버전별 개요**](#버전별-개요)
 
 <br>
 
@@ -126,3 +127,52 @@
 
 **(2020-12-29)**
 - 리소스(메모리) 용량 문제로 k8s에서 **docker swarm**로 컨테이너 관리 프레임워크를 바꿔서 운영중입니다.
+
+<br>
+
+---
+## **버전별 개요**
+### [**v.1.0.0**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.0)
+- **배포 날짜** -> 2020.11.21
+- **버전 개요** -> Auth, Club Service 연결
+- **PR link** -> github.com/DMS-SMS/v1-api-gateway/pull/25
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.0.RELEASE
+- **변경 내용**
+    - **Auth & Club** Service의 gRPC 기반 API로 **요청을 스트림**하는 HTTP API 추가
+
+### [**v.1.0.1**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.1)
+- **배포 날짜** -> 2020.12.12
+- **버전 개요** -> Outing, Schedule, Announcement Service 연결
+- **PR link** -> github.com/DMS-SMS/v1-api-gateway/pull/28
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.1.RELEASE
+- **변경 내용**
+    - **Outing & Schedule & Announcement** Service의 gRPC 기반 API로 **요청을 스트림**하는 HTTP API 추가
+
+### [**v.1.0.2**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.2)
+- **배포 날짜** -> 2021.01.27
+- **버전 개요** -> 성능 향상을 위한 전체적인 consul 서비스 노드 조회 방식 변경
+- **PR link** -> github.com/DMS-SMS/v1-api-gateway/pull/34
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.2.RELEASE
+- **변경 내용**
+    - Consul에서 **변경 이벤트 감지** 시, Gateway 포함 각각의 서비스에 연결되어 있는 **AWS SNS에 메시지 발행**
+    - 서비스 별로 **AWS SQS Pulling**을 통해 메시지를 받으면, **해당 시점**에 consul 서비스 노드 전체 **조회 후 저장**
+    - 그 후, 위에서 로컬에 **저장한 노드 목록을 기준**으로 요청을 스트림할 서비스 노드 선택
+    - 요악 - '요청 발생 시 마다 매번 조회 -> **consul 변경 시점에만 조회 후 저장**'
+
+### [**v.1.0.3**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.3)
+- **배포 날짜** -> 2021.02.06
+- **버전 개요** -> API 별로 중복되는 기능들 middleware로 묶은 후 router에 등록
+- **PR link** -> github.com/DMS-SMS/v1-api-gateway/pull/35
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.3.RELEASE
+- **변경 내용**
+    - **tracer span 관리**(시작, 종료 및 로그 기록), **인증 처리**, **요청 바인딩** 기능들 **middleware로** 따로 빼서 처리
+
+### [**v.1.0.4**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.4)
+- **배포 날짜** -> 2021.02.15
+- **버전 개요** -> 성능 향상을 위한 API 응답 캐싱 핸들링 기능 추가 (in redis)
+- **PR link** -> github.com/DMS-SMS/v1-api-gateway/pull/38
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.4.RELEASE
+- **변경 내용**
+    - **Outing, Schedule, Announcement** 서비스의 조회 관련 API **응답 redis에 저장**
+    - 응답 캐시가 **redis에 존재**할 경우, 따로 요청을 보내지 않고 json으로 **변환 후 빈환**
+    - 특정 리소스에 대한 **변경 감지** 시(상태 코드로 판별), 해당 리소스와 **관련된 캐시 삭제**
