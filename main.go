@@ -270,14 +270,26 @@ func main() {
 
 	// routing announcement service API
 	announcementRouter := router.CustomGroup("/", middleware.LogEntrySetter(announcementLogger))
-	announcementRouter.POSTWithAuth("/v1/announcements", defaultHandler.CreateAnnouncement)
-	announcementRouter.GETWithAuth("/v1/announcements/types/:type", defaultHandler.GetAnnouncements)
-	announcementRouter.GETWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.GetAnnouncementDetail)
-	announcementRouter.PATCHWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.UpdateAnnouncement)
-	announcementRouter.DELETEWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.DeleteAnnouncement)
-	announcementRouter.GETWithAuth("/v1/students/uuid/:student_uuid/announcement-check", defaultHandler.CheckAnnouncement)
-	announcementRouter.GETWithAuth("/v1/announcements/types/:type/query/:search_query", defaultHandler.SearchAnnouncements)
-	announcementRouter.GETWithAuth("/v1/announcements/writer-uuid/:writer_uuid", defaultHandler.GetMyAnnouncements)
+	announcementRouter.POSTWithAuth("/v1/announcements", defaultHandler.CreateAnnouncement,
+		redisHandler.DeleteKeyEventPublisher([]string{"announcements.uuid.*.types.$Type", "students.*.announcement-check", "writers.$TokenUUID.announcements"}, http.StatusCreated))
+	announcementRouter.GETWithAuth("/v1/announcements/types/:type", defaultHandler.GetAnnouncements,
+		redisHandler.ResponderAndSetEventPublisher("announcements.uuid.$TokenUUID.types.$type.start.$Start.count.$Count", http.StatusOK)...)
+	announcementRouter.GETWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.GetAnnouncementDetail,
+		append([]gin.HandlerFunc{
+			redisHandler.DeleteKeyEventPublisher([]string{"students.$TokenUUID.announcement-check", "announcements.uuid.$TokenUUID.types.{announcements.$announcement_uuid.type}", "writers.$TokenUUID.announcements"}, http.StatusOK),
+		}, redisHandler.ResponderAndSetEventPublisher("announcements.$announcement_uuid", http.StatusOK)...)...)
+	announcementRouter.PATCHWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.UpdateAnnouncement,
+		redisHandler.DeleteKeyEventPublisher([]string{"announcements.uuid.*.types.{announcements.$announcement_uuid.type}",
+			"announcements.$announcement_uuid", "students.*.announcement-check", "writers.$TokenUUID.announcements"}, http.StatusOK))
+	announcementRouter.DELETEWithAuth("/v1/announcements/uuid/:announcement_uuid", defaultHandler.DeleteAnnouncement,
+		redisHandler.DeleteKeyEventPublisher([]string{"announcements.uuid.*.types.{announcements.$announcement_uuid.type}",
+			"announcements.$announcement_uuid", "students.*.announcement-check", "writers.$TokenUUID.announcements"}, http.StatusOK))
+	announcementRouter.GETWithAuth("/v1/students/uuid/:student_uuid/announcement-check", defaultHandler.CheckAnnouncement,
+		redisHandler.ResponderAndSetEventPublisher("students.$student_uuid.announcement-check", http.StatusOK)...)
+	announcementRouter.GETWithAuth("/v1/announcements/types/:type/query/:search_query", defaultHandler.SearchAnnouncements,
+		redisHandler.ResponderAndSetEventPublisher("announcements.uuid.$TokenUUID.types.$type.query.$search_query.start.$Start.count,$Count", http.StatusOK)...)
+	announcementRouter.GETWithAuth("/v1/announcements/writer-uuid/:writer_uuid", defaultHandler.GetMyAnnouncements,
+		redisHandler.ResponderAndSetEventPublisher("writers.$writer_uuid.announcements", http.StatusOK)...)
 
 	// routing open-api agent API
 	openApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(openApiLogger))
