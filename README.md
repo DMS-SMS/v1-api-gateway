@@ -1,22 +1,29 @@
 # **DMS-SMS/V1**
 > ### API Gateway 이외의 서비스들에 대한 Repository는 [**서비스 분해**](#서비스-분해) 부분에서 확인하실 수 있습니다!
+
+<br>
+
+---
 ## **INDEX**
 ### [**1. DMS-SMS란?**](#DMS-SMS란?)
 ### [**2. 서비스 기능**](#서비스-기능)
 ### [**3. 서비스 분해**](#서비스-분해)
 ### [**4. API Gateway 기능**](#API-Gateway-기능)
 ### [**5. 배포 방식**](#배포-방식)
+### [**6. 버전별 개요**](#버전별-개요)
 
 <br>
 
+---
 ## **[DMS-SMS](https://github.com/DMS-SMS)란?**
 - SMS는 **School Management System**의 약어로, **학교 관리 시스템**을 의미합니다!
 
-- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 **DMS**에서 **5기 부원들**(현 2020년 기준 2학년)이 개발하는 새로운 서비스입니다.
+- **대덕소프트웨어마이스터고등학교**의 기숙사 관리 시스템(DMS, Dormitory Management System)을 개발하는 동아리인 [**DMS**](https://github.com/DSM-DMS)에서 **5기 부원들**(현 2020년 기준 2학년)이 개발하는 새로운 서비스입니다.
 - **서버 개발**에는 현재 README.md를 작성중인 [**박진홍(PM)**](https://github.com/parkjinhong03)과 [**손민기**](https://github.com/mallycrip) 학생이 참여해 주었고, **MSA 기반**의 서버를 개발하였고 현재 운영중입니다.
 
 <br>
 
+---
 ## **서비스 기능**
 1. ### **외출증 서비스**
     - 저희 서비스의 **주기능**으로, 오프라인 형식이였던 **기존의 외출 프로세스**를 **온라인 형식**으로 만든 것 입니다.
@@ -36,6 +43,7 @@
 
 <br>
 
+---
 ## **서비스 분해**
 > API Gateway에 대한 **HTTP API** 및 gRPC 서비스들에 대한 **RPC API**에 대해 **설계한 내용**들은 [**HTTP API 설계**](https://www.notion.so/API-1498b7b706ad4a5284fbc9567a8184be)와 [**RPC API(Proto) 설계**](https://www.notion.so/RPC-API-Proto-710988a1fc3744a3bf2df7f6ee3762ce)에서  추가로 확인하실 수 있습니다.
 
@@ -78,6 +86,7 @@
 
 <br>
 
+---
 ## **API Gateway 기능**
 1. ### **요청 유효성 검사**
     - 서버에 전송한 payload에 꼭 필요한 **데이터가 다 존재**하는지, **데이터 제약조건**은 다 만족했는지 확인 *(x -> 400 Bad Request)* 
@@ -107,6 +116,7 @@
 
 <br>
 
+---
 ## **배포 방식**
 **(2020-09-19)**
 - ~~각각의 서비스들은 **AWS EKS 클러스터**의 **노드**마다 하나씩 **Public Subnet**및 **Private Subnet**에 알맞게 배치되어 실행중입니다.~~
@@ -117,3 +127,52 @@
 
 **(2020-12-29)**
 - 리소스(메모리) 용량 문제로 k8s에서 **docker swarm**로 컨테이너 관리 프레임워크를 바꿔서 운영중입니다.
+
+<br>
+
+---
+## **버전별 개요**
+### [**v.1.0.0**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.0)
+- **배포 날짜** -> 2020.11.21
+- **버전 개요** -> Auth, Club Service 연결
+- **PR link** -> [github.com/DMS-SMS/v1-api-gateway/pull/25](https://github.com/DMS-SMS/v1-api-gateway/pull/25)
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.0.RELEASE
+- **변경 내용**
+    - **Auth & Club** Service의 gRPC 기반 API로 **요청을 스트림**하는 HTTP API 추가
+
+### [**v.1.0.1**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.1)
+- **배포 날짜** -> 2020.12.12
+- **버전 개요** -> Outing, Schedule, Announcement Service 연결
+- **PR link** -> [github.com/DMS-SMS/v1-api-gateway/pull/28](https://github.com/DMS-SMS/v1-api-gateway/pull/28)
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.1.RELEASE
+- **변경 내용**
+    - **Outing & Schedule & Announcement** Service의 gRPC 기반 API로 **요청을 스트림**하는 HTTP API 추가
+
+### [**v.1.0.2**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.2)
+- **배포 날짜** -> 2021.01.27
+- **버전 개요** -> 성능 향상을 위한 전체적인 consul 서비스 노드 조회 방식 변경
+- **PR link** -> [github.com/DMS-SMS/v1-api-gateway/pull/34](https://github.com/DMS-SMS/v1-api-gateway/pull/34)
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.2.RELEASE
+- **변경 내용**
+    - Consul에서 **변경 이벤트 감지** 시, Gateway 포함 각각의 서비스에 연결되어 있는 **AWS SNS에 메시지 발행**
+    - 서비스 별로 **AWS SQS Pulling**을 통해 메시지를 받으면, **해당 시점**에 consul 서비스 노드 전체 **조회 후 저장**
+    - 그 후, 위에서 로컬에 **저장한 노드 목록을 기준**으로 요청을 스트림할 서비스 노드 선택
+    - 요악 - '요청 발생 시 마다 매번 조회 -> **consul 변경 시점에만 조회 후 저장**'
+
+### [**v.1.0.3**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.3)
+- **배포 날짜** -> 2021.02.06
+- **버전 개요** -> API 별로 중복되는 기능들 middleware로 묶은 후 router에 등록
+- **PR link** -> [github.com/DMS-SMS/v1-api-gateway/pull/35](https://github.com/DMS-SMS/v1-api-gateway/pull/35)
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.3.RELEASE
+- **변경 내용**
+    - **tracer span 관리**(시작, 종료 및 로그 기록), **인증 처리**, **요청 바인딩** 기능들 **middleware로** 따로 빼서 처리
+
+### [**v.1.0.4**](https://github.com/DMS-SMS/v1-api-gateway/tree/v.1.0.4)
+- **배포 날짜** -> 2021.02.15
+- **버전 개요** -> 성능 향상을 위한 API 응답 캐싱 핸들링 기능 추가 (in redis)
+- **PR link** -> [github.com/DMS-SMS/v1-api-gateway/pull/38](https://github.com/DMS-SMS/v1-api-gateway/pull/38)
+- **Docker** -> jinhong0719/dms-sms-api-gateway:1.0.4.RELEASE
+- **변경 내용**
+    - **Outing, Schedule, Announcement** 서비스의 조회 관련 API **응답 redis에 저장**
+    - 응답 캐시가 **redis에 존재**할 경우, 따로 요청을 보내지 않고 json으로 **변환 후 빈환**
+    - 특정 리소스에 대한 **변경 감지** 시(상태 코드로 판별), 해당 리소스와 **관련된 캐시 삭제**
