@@ -4,10 +4,13 @@
 package handler
 
 import (
+	"context"
 	"gateway/entity"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sns"
+	authproto "gateway/proto/golang/auth"
+	clubproto "gateway/proto/golang/club"
+	topic "gateway/utils/topic/golang"
 	"github.com/gin-gonic/gin"
+	"github.com/micro/go-micro/v2/client"
 	"log"
 	"net/http"
 	"sync"
@@ -56,15 +59,18 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 		return
 	}
 
-	pubOutput, err := sns.New(h.awsSession).Publish(&sns.PublishInput{
-		Message:  aws.String("ConsulChangeEvent"),
-		TopicArn: aws.String(snsTopicArn),
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
-		consulIndexMutex.Unlock()
-		return
-	}
+	//pubOutput, err := sns.New(h.awsSession).Publish(&sns.PublishInput{
+	//	Message:  aws.String("ConsulChangeEvent"),
+	//	TopicArn: aws.String(snsTopicArn),
+	//})
+	//if err != nil {
+	//	c.JSON(http.StatusInternalServerError, err.Error())
+	//	consulIndexMutex.Unlock()
+	//	return
+	//}
+
+	_ = h.consulAgent.ChangeAllServiceNodes()
+	h.publishConsulChangeEvent()
 
 	if _, ok := h.consulIndexFilter[service]; !ok {
 		h.consulIndexFilter[service] = map[consulIndex][]entity.PublishConsulChangeEventRequest{}
@@ -77,7 +83,7 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 	})
 	consulIndexMutex.Unlock()
 
-	log.Printf("PUBLISH NEW MESSAGE TO SNS! MESSAGE ID: %s, SNS ARN: %s\n", *pubOutput.MessageId, snsTopicArn)
+	log.Print("SUCCEED TO PUBLISH CONSUL CHANGE REQUEST TO ALL SERVICE!!")
 	c.Status(http.StatusOK)
 	return
 }
@@ -94,8 +100,8 @@ func (h *_default) publishConsulChangeEvent() {
 	go func() {
 		authNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
 		if err != nil {
-		return
-	}
+			return
+		}
 		authCallOpts := append(h.DefaultCallOpts, client.WithAddress(authNode.Address))
 		_, _ = h.authService.ChangeAllServiceNodes(context.Background(), &authproto.Empty{}, authCallOpts...)
 	}()
@@ -104,7 +110,7 @@ func (h *_default) publishConsulChangeEvent() {
 		clubNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
 		if err != nil {
 			return
-}
+		}
 		clubCallOpts := append(h.DefaultCallOpts, client.WithAddress(clubNode.Address))
 		_, _ = h.clubService.ChangeAllServiceNodes(context.Background(), &clubproto.Empty{}, clubCallOpts...)
 	}()
