@@ -8,7 +8,7 @@ import (
 type CreateOutingRequest struct {
 	StartTime int64  `json:"start_time" validate:"required,int_len=10"`
 	EndTime   int64  `json:"end_time" validate:"required,int_len=10"`
-	Place     string `json:"place" validate:"required,max=50"`
+	Place     string `json:"place" validate:"required,max=150"`
 	Reason    string `json:"reason" validate:"required,max=150"`
 	Situation string `json:"situation" validate:"required,values=normal&emergency"`
 }

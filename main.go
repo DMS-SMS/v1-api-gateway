@@ -21,7 +21,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -120,20 +119,20 @@ func main() {
 	)
 
 	// create subscriber & register aws sqs, redis listener (add in v.1.0.2)
-	consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
+	//consulChangeQueue := env.GetAndFatalIfNotExits("CHANGE_CONSUL_SQS_GATEWAY")
 	redisDelTopic := env.GetAndFatalIfNotExits("REDIS_DELETE_TOPIC")
 	redisSetTopic := env.GetAndFatalIfNotExits("REDIS_SET_TOPIC")
 	subscriber.SetAwsSession(awsSession)
 	subscriber.SetRedisClient(redisCli)
 	defaultSubscriber := subscriber.Default()
-	defaultSubscriber.RegisterBeforeStart(
-		subscriber.SqsQueuePurger(consulChangeQueue),
-	)
+	//defaultSubscriber.RegisterBeforeStart(
+	//	subscriber.SqsQueuePurger(consulChangeQueue),
+	//)
 	defaultSubscriber.RegisterListeners(
-		subscriber.SqsMsgListener(consulChangeQueue, defaultHandler.ChangeConsulNodes, &sqs.ReceiveMessageInput{
-			MaxNumberOfMessages: aws.Int64(10),
-			WaitTimeSeconds:     aws.Int64(2),
-		}),
+		//subscriber.SqsMsgListener(consulChangeQueue, defaultHandler.ChangeConsulNodes, &sqs.ReceiveMessageInput{
+		//	MaxNumberOfMessages: aws.Int64(10),
+		//	WaitTimeSeconds:     aws.Int64(2),
+		//}),
 		subscriber.RedisListener(redisDelTopic, defaultHandler.DeleteAssociatedRedisKey, 5), // add in v.1.0.3
 		subscriber.RedisListener(redisSetTopic, defaultHandler.SetRedisKeyWithResponse, 5), // add in v.1.0.4
 	)
