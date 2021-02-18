@@ -96,7 +96,7 @@ func (h *_default) SetRedisKeyWithResponse(msg *redis.Message) (err error) {
 		key = fmt.Sprintf("%s.type", key)
 		h.redisClient.Set(ctx, key, _type, 0)
 	case timetableRegex.MatchString(key):
-		h.redisClient.Set(ctx, key, string(respBytes), 0)
+		h.redisClient.Set(ctx, key, string(respBytes), time.Hour * 24)
 	}
 	return
 }
