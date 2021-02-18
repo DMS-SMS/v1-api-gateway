@@ -85,10 +85,29 @@ func (h *_default) PublishConsulChangeEvent (c *gin.Context) {
 // function that return closure publishing consul change event
 func (h *_default) ConsulChangeEventPublisher() func() error {
 	return func() (err error) {
-		_, err = sns.New(h.awsSession).Publish(&sns.PublishInput{
-			Message:  aws.String("ConsulChangeEvent"),
-			TopicArn: aws.String(snsTopicArn),
-		})
+		h.publishConsulChangeEvent()
 		return
 	}
+}
+
+func (h *_default) publishConsulChangeEvent() {
+	go func() {
+		authNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+		if err != nil {
+		return
+	}
+		authCallOpts := append(h.DefaultCallOpts, client.WithAddress(authNode.Address))
+		_, _ = h.authService.ChangeAllServiceNodes(context.Background(), &authproto.Empty{}, authCallOpts...)
+	}()
+
+	go func() {
+		clubNode, err := h.consulAgent.GetNextServiceNode(topic.ClubServiceName)
+		if err != nil {
+			return
+}
+		clubCallOpts := append(h.DefaultCallOpts, client.WithAddress(clubNode.Address))
+		_, _ = h.clubService.ChangeAllServiceNodes(context.Background(), &clubproto.Empty{}, clubCallOpts...)
+	}()
+
+	// add calling outing, schedule, announcement service
 }
