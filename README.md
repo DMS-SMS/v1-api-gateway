@@ -184,3 +184,4 @@
     - **Outing, Schedule, Announcement** 서비스의 조회 관련 API **응답 redis에 저장**
     - 응답 캐시가 **redis에 존재**할 경우, 따로 요청을 보내지 않고 json으로 **변환 후 빈환**
     - 특정 리소스에 대한 **변경 감지** 시(상태 코드로 판별), 해당 리소스와 **관련된 캐시 삭제**
+    - consul change event 전달 방식 변경 (AWS SNS & SQS -> gRPC)
