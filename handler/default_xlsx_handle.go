@@ -45,4 +45,45 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 	inAdvanceReq, _ := c.Get("Request")
 	receivedReq, _ := inAdvanceReq.(*entity.AddUnsignedStudentsFromExcelRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
+
+	_ = reqID
+	_ = topSpan
+
+	adminRegex := regexp.MustCompile("^admin-\\d{12}$")
+	if !adminRegex.MatchString(uuidClaims.UUID) {
+		status, _code, msg := http.StatusForbidden, 0, "you are not admin"
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		return
+	}
+
+	if !strings.HasSuffix(receivedReq.Excel.Filename, ".xlsx") {
+		status, _code := http.StatusBadRequest, code.IntegrityInvalidRequest
+		msg := fmt.Sprintf("formatting of Excel file must be .xlsx, file name: %s", receivedReq.Excel.Filename)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		return
+	}
+
+	f, err := receivedReq.Excel.Open()
+	if err != nil {
+		status, _code := http.StatusBadRequest, code.IntegrityInvalidRequest
+		msg := fmt.Sprintf("unable to open excel file, file name: %s, err: %v", receivedReq.Excel.Filename, err)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	excel, err := excelize.OpenReader(f)
+	if err != nil {
+		status, _code := http.StatusBadRequest, code.IntegrityInvalidRequest
+		msg := fmt.Sprintf("unable to read excel file, file name: %s, err: %v", receivedReq.Excel.Filename, err)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
+		return
+	}
+
 }
