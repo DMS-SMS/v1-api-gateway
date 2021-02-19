@@ -79,18 +79,6 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 		return
 	}
 
-	status, _code, msg := 0, 0, ""
-	defer func() {
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)})
-		if status == http.StatusInternalServerError {
-			entry.Error()
-		} else {
-			entry.Info()
-		}
-		return
-	}()
-
 	// 학년, 반, 번호, 이름, (+ 전화번호)
 	type student struct {
 		name, phoneNumber     string
@@ -101,8 +89,10 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 	for _, sheet := range excel.GetSheetMap() {
 		rows, err := excel.GetRows(sheet)
 		if err != nil {
-			status = http.StatusBadRequest
-			msg = err.Error()
+			status, _code := http.StatusBadRequest, 0
+			msg := err.Error()
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 			return
 		}
 
@@ -130,8 +120,10 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 		// 존재 X 속성 존재 시, 반환
 		switch false {
 		case studentNumberExist, nameExist, phoneNumberExist:
-			status = http.StatusBadRequest
-			msg = fmt.Sprintf("각각 학번, 성명, 전화번호와 관련된 속성이 모두 존재해야합니다, sheet: %s", sheet)
+			status, _code := http.StatusBadRequest, 0
+			msg := fmt.Sprintf("각각 학번, 성명, 전화번호와 관련된 속성이 모두 존재해야합니다, sheet: %s", sheet)
+			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 			return
 		}
 
@@ -167,8 +159,10 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 			// 옳바르지 않은 형식의 데이터 존재 -> 400 반환
 			switch false {
 			case studentNumberRegex.MatchString(studentNumber), nameRegex.MatchString(name), phoneNumberRegex.MatchString(phoneNumber):
-				status = http.StatusBadRequest
-				msg = fmt.Sprintf("학번, 성명, 전화번호와 관련된 값이 옳바르지 않습니다. (%s %s %s) sheet: %s", studentNumber, name, phoneNumber, sheet)
+				status, _code := http.StatusBadRequest, 0
+				msg := fmt.Sprintf("학번, 성명, 전화번호와 관련된 값이 옳바르지 않습니다. (%s %s %s) sheet: %s", studentNumber, name, phoneNumber, sheet)
+				c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+				entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 				return
 			}
 
