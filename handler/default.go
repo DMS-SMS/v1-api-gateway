@@ -27,8 +27,8 @@ type _default struct {
 	authService authproto.AuthServiceClient
 	clubService clubproto.ClubServiceClient
 	outingService outingproto.OutingServiceClient
-	scheduleService scheduleproto.ScheduleService
-	announcementService announcementproto.AnnouncementService
+	scheduleService scheduleproto.ScheduleServiceClient
+	announcementService announcementproto.AnnouncementServiceClient
 
 	consulAgent     consul.Agent
 	logger          *logrus.Logger
@@ -97,13 +97,13 @@ func OutingService(outingService outingproto.OutingServiceClient) FieldSetter {
 	}
 }
 
-func AnnouncementService(announcementService announcementproto.AnnouncementService) FieldSetter {
+func AnnouncementService(announcementService announcementproto.AnnouncementServiceClient) FieldSetter {
 	return func(h *_default) {
 		h.announcementService = announcementService
 	}
 }
 
-func ScheduleService(scheduleService scheduleproto.ScheduleService) FieldSetter {
+func ScheduleService(scheduleService scheduleproto.ScheduleServiceClient) FieldSetter {
 	return func(h *_default) {
 		h.scheduleService = scheduleService
 	}
