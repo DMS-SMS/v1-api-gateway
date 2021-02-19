@@ -100,8 +100,8 @@ func main() {
 	authSrvCli := authproto.NewAuthService(topic.AuthServiceName, gRPCCli)
 	clubSrvCli := clubproto.NewClubService(topic.ClubServiceName, gRPCCli)
 	outingSrvCli := outingproto.NewOutingService("", gRPCCli)
-	scheduleSrvCli := scheduleproto.NewScheduleService("schedule", gRPCCli)
-	announcementSrvCli := announcementproto.NewAnnouncementService("announcement", gRPCCli)
+	scheduleSrvCli := scheduleproto.NewScheduleSrv("schedule", gRPCCli)
+	announcementSrvCli := announcementproto.NewAnnouncementSrv("announcement", gRPCCli)
 
 	// create http request & event handler
 	defaultHandler := handler.Default(

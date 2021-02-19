@@ -6,8 +6,11 @@ package handler
 import (
 	"context"
 	"gateway/entity"
+	announcementproto "gateway/proto/golang/announcement"
 	authproto "gateway/proto/golang/auth"
 	clubproto "gateway/proto/golang/club"
+	outingproto "gateway/proto/golang/outing"
+	scheduleproto "gateway/proto/golang/schedule"
 	topic "gateway/utils/topic/golang"
 	"github.com/gin-gonic/gin"
 	"github.com/micro/go-micro/v2/client"
@@ -115,5 +118,30 @@ func (h *_default) publishConsulChangeEvent() {
 		_, _ = h.clubService.ChangeAllServiceNodes(context.Background(), &clubproto.Empty{}, clubCallOpts...)
 	}()
 
-	// add calling outing, schedule, announcement service
+	go func() {
+		outingNode, err := h.consulAgent.GetNextServiceNode(topic.OutingServiceName)
+		if err != nil {
+			return
+		}
+		outingCallOpts := append(h.DefaultCallOpts, client.WithAddress(outingNode.Address))
+		_, _ = h.outingService.ChangeAllServiceNodes(context.Background(), &outingproto.Empty{}, outingCallOpts...)
+	}()
+
+	go func() {
+		announcementNode, err := h.consulAgent.GetNextServiceNode(topic.AnnouncementServiceName)
+		if err != nil {
+			return
+		}
+		announcementCallOpts := append(h.DefaultCallOpts, client.WithAddress(announcementNode.Address))
+		_, _ = h.announcementService.ChangeAllServiceNodes(context.Background(), &announcementproto.Empty{}, announcementCallOpts...)
+	}()
+
+	go func() {
+		scheduleNode, err := h.consulAgent.GetNextServiceNode(topic.ScheduleServiceName)
+		if err != nil {
+			return
+		}
+		scheduleCallOpts := append(h.DefaultCallOpts, client.WithAddress(scheduleNode.Address))
+		_, _ = h.scheduleService.ChangeAllServiceNodes(context.Background(), &scheduleproto.Empty{}, scheduleCallOpts...)
+	}()
 }
