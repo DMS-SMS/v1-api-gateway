@@ -3,6 +3,7 @@ module gateway
 go 1.13
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.2
 	github.com/HdrHistogram/hdrhistogram-go v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.23.0
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0
