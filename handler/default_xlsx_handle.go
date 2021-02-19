@@ -15,13 +15,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 var (
 	studentNumberRegex = regexp.MustCompile("(^[1-3][1-4])([0-1][0-9]$|20|21)")
 	nameRegex = regexp.MustCompile("^[가-힣]+$")
-	phoneNumberRegex = regexp.MustCompile("^\"\\d{2,3}[-_.]?\\d{3,4}[-_.]?\\d{4}\"$")
+	phoneNumberRegex = regexp.MustCompile("^\"\\d{3}[-_.]?\\d{4}[-_.]?\\d{4}\"$")
 	blankRegex = regexp.MustCompile("(^[ ]+$)|(^$)")
 )
 
@@ -48,14 +49,6 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 
 	_ = reqID
 	_ = topSpan
-
-	adminRegex := regexp.MustCompile("^admin-\\d{12}$")
-	if !adminRegex.MatchString(uuidClaims.UUID) {
-		status, _code, msg := http.StatusForbidden, 0, "you are not admin"
-		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
-		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
-		return
-	}
 
 	if !strings.HasSuffix(receivedReq.Excel.Filename, ".xlsx") {
 		status, _code := http.StatusBadRequest, code.IntegrityInvalidRequest
@@ -99,6 +92,12 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 	}()
 
 	// 학년, 반, 번호, 이름, (+ 전화번호)
+	type student struct {
+		name, phoneNumber     string
+		grade, _class, number int
+	}
+
+	var students []student
 	for _, sheet := range excel.GetSheetMap() {
 		rows, err := excel.GetRows(sheet)
 		if err != nil {
@@ -173,8 +172,20 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 				return
 			}
 
-			// 3109 박진홍 "01088378511"
-			// fmt.Println(studentNumber, name, phoneNumber)
+			phoneNumber = regexp.MustCompile("[-_.]").ReplaceAllString(phoneNumber, "")
+			grade, _ := strconv.Atoi(studentNumber[:1])
+			_class, _ := strconv.Atoi(studentNumber[1:2])
+			number, _ := strconv.Atoi(studentNumber[2:])
+
+			students = append(students, student{
+				name:        name,
+				phoneNumber: strings.TrimPrefix(strings.TrimSuffix(phoneNumber, "\""), "\""),
+				grade:       grade,
+				_class:      _class,
+				number:      number,
+			})
 		}
 	}
+
+	// 요청 보내~기!
 }
