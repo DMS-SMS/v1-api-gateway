@@ -160,6 +160,11 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 				continue
 			}
 
+			// 띄워쓰기 삭제 (Ex, "박진홍 " -> "박진홍")
+			studentNumber = strings.Join(strings.Split(studentNumber, " "), "")
+			name = strings.Join(strings.Split(name, " "), "")
+			phoneNumber = strings.Join(strings.Split(phoneNumber, " "), "")
+
 			// 옳바르지 않은 형식의 데이터 존재 -> 400 반환
 			switch false {
 			case studentNumberRegex.MatchString(studentNumber), nameRegex.MatchString(name), phoneNumberRegex.MatchString(phoneNumber):
