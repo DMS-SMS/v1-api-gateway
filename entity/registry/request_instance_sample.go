@@ -54,4 +54,7 @@ var requestSamples = map[string]interface{}{
 	"GetScheduleRequest": entity.GetScheduleRequest{},
 	"GetTimeTableRequest": entity.GetTimeTableRequest{},
 	"UpdateScheduleRequest": entity.UpdateScheduleRequest{},
+
+	// in "entity/request_xlsx.go"
+	//"AddUnsignedStudentsFromExcelRequest": entity.AddUnsignedStudentsFromExcelRequest{},
 }
