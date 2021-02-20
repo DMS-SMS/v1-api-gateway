@@ -21,7 +21,7 @@ import (
 
 var (
 	studentNumberRegex = regexp.MustCompile("(^[1-3][1-4])([0-1][0-9]$|20|21)")
-	nameRegex = regexp.MustCompile("^[가-힣]+$")
+	nameRegex = regexp.MustCompile("^[가-힣]{2,4}$")
 	phoneNumberRegex = regexp.MustCompile("^\"\\d{3}[-_.]?\\d{4}[-_.]?\\d{4}\"$")
 	blankRegex = regexp.MustCompile("(^[ ]+$)|(^$)")
 )
@@ -46,9 +46,6 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 	inAdvanceReq, _ := c.Get("Request")
 	receivedReq, _ := inAdvanceReq.(*entity.AddUnsignedStudentsFromExcelRequest)
 	reqBytes, _ := json.Marshal(receivedReq)
-
-	_ = reqID
-	_ = topSpan
 
 	if !strings.HasSuffix(receivedReq.Excel.Filename, ".xlsx") {
 		status, _code := http.StatusBadRequest, code.IntegrityInvalidRequest
@@ -85,6 +82,7 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 		grade, _class, number int
 	}
 
+	// 엑셀 파일 파싱 (힉생 정보 조회)
 	var students []student
 	for _, sheet := range excel.GetSheetMap() {
 		rows, err := excel.GetRows(sheet)
@@ -94,6 +92,11 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 			c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
 			entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Info()
 			return
+		}
+
+		// 속성 행, 필드 행이 존재하지 않다면 continue
+		if len(rows) <= 2 || rows[0] == nil {
+			continue
 		}
 
 		attrs := rows[0]
@@ -137,7 +140,7 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 
 		rowValues := rows[1:]
 		for _, rowValue := range rowValues {
-			if len(rowValue) - 1 < maxIndex {
+			if rowValue == nil || len(rowValue) - 1 < maxIndex {
 				continue
 			}
 
