@@ -4,15 +4,23 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"gateway/entity"
+	authproto "gateway/proto/golang/auth"
 	jwtutil "gateway/tool/jwt"
 	code "gateway/utils/code/golang"
+	topic "gateway/utils/topic/golang"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/micro/go-micro/v2/client"
+	"github.com/micro/go-micro/v2/errors"
+	"github.com/micro/go-micro/v2/metadata"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sirupsen/logrus"
+	"github.com/uber/jaeger-client-go"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -184,5 +192,83 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 		}
 	}
 
-	// 요청 보내~기!
+	// create request entity
+	studentsForReq := make([]*authproto.BasicStudentInform, len(students))
+	for i, student := range students {
+		studentsForReq[i] = &authproto.BasicStudentInform{
+			Name:          student.name,
+			PhoneNumber:   student.phoneNumber,
+			Grade:         uint32(student.grade),
+			Group:         uint32(student._class),
+			StudentNumber: uint32(student.number),
+		}
+	}
+
+	// student 0개면 빠꾸
+
+	// get service node
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
+
+	// send gRPC request
+	authSrvSpan := h.tracer.StartSpan("AddUnsignedStudents", opentracing.ChildOf(topSpan.Context()))
+	ctxForReq := context.Background()
+	ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+	ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+	rpcReq := &authproto.AddUnsignedStudentsRequest{
+		UUID:     uuidClaims.UUID,
+		Students: studentsForReq,
+	}
+	callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+	rpcResp, rpcErr := h.authService.AddUnsignedStudents(ctxForReq, rpcReq, callOpts...)
+	authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+	authSrvSpan.Finish()
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		status, _code, msg := 0, 0, ""
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for AddUnsignedStudents service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("AddUnsignedStudents returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	default:
+		status, _code := http.StatusInternalServerError, 0
+		msg := fmt.Sprintf("AddUnsignedStudents returns unexpected type of error, err: %s", rpcErr.Error())
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+
+	switch rpcResp.Status {
+	case http.StatusCreated:
+		status, _code := http.StatusCreated, 0
+		sendResp := gin.H{"status": status, "code": _code, "message": rpcResp.Message,
+			"req_student_count": len(studentsForReq), "no_add_count": rpcResp.NoAddCount, "add_count": rpcResp.AddCount}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": rpcResp.Message, "response": string(respBytes), "request": string(reqBytes)}).Info()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
+	}
+
+	return
 }
