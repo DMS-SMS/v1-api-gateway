@@ -275,6 +275,7 @@ func main() {
 	// routing excel handling API
 	excelApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(excelApiLogger))
 	excelApiRouter.POSTWithAuth("/v1/unsigned-students/parsed-by/excel", defaultHandler.AddUnsignedStudentsFromExcel)
+	excelApiRouter.POSTWithAuth("/v1/unsigned-students/parsed-by/excel/sheets/:sheet", defaultHandler.AddUnsignedStudentsFromExcel)
 
 	// run server
 	log.Fatal(globalRouter.Run(":80"))
