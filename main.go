@@ -147,6 +147,7 @@ func main() {
 	scheduleLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/schedule.log", logrus.Fields{"service": "schedule"})
 	announcementLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/announcement.log", logrus.Fields{"service": "announcement"})
 	openApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/open-api.log", logrus.Fields{"service": "open-api"})
+	excelApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/excel-api.log", logrus.Fields{"service": "excel-api"})
 
 	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
@@ -270,6 +271,10 @@ func main() {
 	// routing open-api agent API
 	openApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GETWithAuth("/naver-open-api/search/local", defaultHandler.GetPlaceWithNaverOpenAPI)
+
+	// routing excel handling API
+	excelApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(excelApiLogger))
+	excelApiRouter.POSTWithAuth("/v1/unsigned-students/parsed-by/excel", defaultHandler.AddUnsignedStudentsFromExcel)
 
 	// run server
 	log.Fatal(globalRouter.Run(":80"))
