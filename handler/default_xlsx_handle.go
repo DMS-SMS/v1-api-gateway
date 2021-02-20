@@ -84,6 +84,11 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 		return
 	}
 
+	sheets := excel.GetSheetMap()
+	if sheet := c.Param("sheet"); sheet != "" {
+		sheets = map[int]string{1: sheet}
+	}
+
 	// 학년, 반, 번호, 이름, (+ 전화번호)
 	type student struct {
 		name, phoneNumber     string
@@ -92,7 +97,7 @@ func (h *_default) AddUnsignedStudentsFromExcel(c *gin.Context) {
 
 	// 엑셀 파일 파싱 (힉생 정보 조회)
 	var students []student
-	for _, sheet := range excel.GetSheetMap() {
+	for _, sheet := range sheets {
 		rows, err := excel.GetRows(sheet)
 		if err != nil {
 			status, _code := http.StatusBadRequest, 0
