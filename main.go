@@ -194,6 +194,7 @@ func main() {
 	authRouter.POSTWithAuth("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POSTWithAuth("/v1/parents", defaultHandler.CreateNewParent)
 	authRouter.POST("/v1/login/admin", defaultHandler.LoginAdminAuth)
+	authRouter.POSTWithAuth("/v1/join-sms/unsigned-students", defaultHandler.SendJoinSMSToUnsignedStudents)
 	// auth service api for student
 	authRouter.POST("/v1/login/student", defaultHandler.LoginStudentAuth)
 	authRouter.PUTWithAuth("/v1/students/uuid/:student_uuid/password", defaultHandler.ChangeStudentPW)
