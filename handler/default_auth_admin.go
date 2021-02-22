@@ -436,3 +436,86 @@ func (h *_default) LoginAdminAuth(c *gin.Context) {
 
 	return
 }
+
+func (h *_default) SendJoinSMSToUnsignedStudents(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-Id")
+
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
+
+	// get token claim from middleware
+	inAdvanceClaims, _ := c.Get("Claims")
+	uuidClaims, _ := inAdvanceClaims.(jwtutil.UUIDClaims)
+	entry = entry.WithField("user_uuid", uuidClaims.UUID)
+
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.SendJoinSMSToUnsignedStudentsRequest)
+	reqBytes, _ := json.Marshal(receivedReq)
+
+	// get service node
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
+
+	// send gRPC request
+	authSrvSpan := h.tracer.StartSpan("SendJoinSMSToUnsignedStudents", opentracing.ChildOf(topSpan.Context()))
+	ctxForReq := context.Background()
+	ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+	ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+	rpcReq := receivedReq.GenerateGRPCRequest()
+	rpcReq.UUID = uuidClaims.UUID
+	callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+	rpcResp, rpcErr := h.authService.SendJoinSMSToUnsignedStudents(ctxForReq, rpcReq, callOpts...)
+	authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+	authSrvSpan.Finish()
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		status, _code, msg := 0, 0, ""
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for SendJoinSMSToUnsignedStudents service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("SendJoinSMSToUnsignedStudents returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	default:
+		status, _code := http.StatusInternalServerError, 0
+		msg := fmt.Sprintf("SendJoinSMSToUnsignedStudents returns unexpected type of error, err: %s", rpcErr.Error())
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+
+	switch rpcResp.Status {
+	case http.StatusOK:
+		status, _code := http.StatusOK, 0
+		sendResp := gin.H{"status": status, "code": _code, "message": rpcResp.Message, "no_send_count": rpcResp.SendCount, "send_count": rpcResp.SendCount}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": rpcResp.Message, "response": string(respBytes), "request": string(reqBytes)}).Info()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
+	}
+}
