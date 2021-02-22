@@ -239,3 +239,13 @@ func (from SendJoinSMSToUnsignedStudentsRequest) GenerateGRPCRequest() (to *auth
 	to.TargetGroup = uint32(from.Group)
 	return
 }
+
+type GetStudentInformWithAuthCodeRequest struct {
+	AuthCode int `uri:"auth_code" validate:"required"`
+}
+
+func (from GetStudentInformWithAuthCodeRequest) GenerateGRPCRequest() (to *authproto.GetStudentInformWithAuthCodeRequest) {
+	to = new(authproto.GetStudentInformWithAuthCodeRequest)
+	to.AuthCode = uint32(from.AuthCode)
+	return
+}
