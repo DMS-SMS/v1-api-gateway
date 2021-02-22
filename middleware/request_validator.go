@@ -50,7 +50,7 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 		}
 
 		switch req.(type) {
-		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest:
+		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest, *entity.GetUnsignedStudentWithAuthCodeRequest:
 			if err := c.ShouldBindUri(req); err != nil {
 				respFor400["code"] = code.FailToBindRequestToStruct
 				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
