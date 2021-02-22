@@ -249,3 +249,17 @@ func (from GetUnsignedStudentWithAuthCodeRequest) GenerateGRPCRequest() (to *aut
 	to.AuthCode = uint32(from.AuthCode)
 	return
 }
+
+type CreateNewStudentWithAuthCodeRequest struct {
+	AuthCode  int    `json:"auth_code" validate:"required"`
+	StudentID string `json:"student_id" validate:"required,min=4,max=16"`
+	StudentPW string `json:"student_pw" validate:"required,min=4,max=16"`
+}
+
+func (from CreateNewStudentWithAuthCodeRequest) GenerateGRPCRequest() (to *authproto.CreateNewStudentWithAuthCodeRequest) {
+	to = new(authproto.CreateNewStudentWithAuthCodeRequest)
+	to.AuthCode = uint32(from.AuthCode)
+	to.StudentID = from.StudentID
+	to.StudentPW = from.StudentPW
+	return
+}
