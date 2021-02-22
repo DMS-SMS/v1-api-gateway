@@ -28,6 +28,7 @@ var requestSamples = map[string]interface{}{
 	"LoginParentAuthRequest": entity.LoginParentAuthRequest{},
 	"ChangeParentPWRequest": entity.ChangeParentPWRequest{},
 	"GetParentUUIDsWithInformRequest": entity.GetParentUUIDsWithInformRequest{},
+	"SendJoinSMSToUnsignedStudentsRequest": entity.SendJoinSMSToUnsignedStudentsRequest{},
 
 	// in "entity/request_club.go"
 	"CreateNewClubRequest": entity.CreateNewClubRequest{},
