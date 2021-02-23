@@ -64,6 +64,12 @@ type CreateNewParentRequest struct {
 	ParentPW    string `json:"parent_pw" validate:"required,min=4,max=16"`
 	Name        string `json:"name" validate:"required,korean,min=2,max=4"`
 	PhoneNumber string `json:"phone_number" validate:"required,phone_number,len=11"`
+	Children        []struct {
+		Grade         int    `json:"grade" validate:"required,int_range=1~3"`
+		Group         int    `json:"group" validate:"int_range=1~4"`
+		StudentNumber int    `json:"student_number" validate:"required,int_range=1~21"`
+		Name          string `json:"name" validate:"required,korean,min=2,max=4"`
+	} `json:"children" validate:"required"`
 }
 
 func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNewParentRequest) {
@@ -72,6 +78,15 @@ func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNe
 	to.ParentPW = from.ParentPW
 	to.Name = from.Name
 	to.PhoneNumber = from.PhoneNumber
+	to.ChildrenInform = make([]*authproto.ChildInform, len(from.Children))
+	for index, member := range from.Children {
+		to.ChildrenInform[index] = &authproto.ChildInform{
+			Grade:         uint32(member.Grade),
+			Group:         uint32(member.Group),
+			StudentNumber: uint32(member.StudentNumber),
+			Name:          member.Name,
+		}
+	}
 	return
 }
 
