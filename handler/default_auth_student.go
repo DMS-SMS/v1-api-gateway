@@ -317,8 +317,8 @@ func (h *_default) GetStudentInformWithUUID(c *gin.Context) {
 		status, _code := http.StatusOK, 0
 		msg := fmt.Sprintf("succeed to get student inform, uuid: %s", uuidClaims.UUID)
 		sendResp := gin.H{
-			"status": status, "code": _code, "message": msg,
-			"name": rpcResp.Name, "phone_number": rpcResp.PhoneNumber, "profile_uri": rpcResp.ImageURI,
+			"status": status, "code": _code, "message": msg, "name": rpcResp.Name,
+			"phone_number": rpcResp.PhoneNumber, "profile_uri": rpcResp.ImageURI, "parent_status": rpcResp.ParentStatus,
 			"grade": rpcResp.Grade, "group": rpcResp.Group, "student_number": rpcResp.StudentNumber,
 		}
 		c.JSON(status, sendResp)
