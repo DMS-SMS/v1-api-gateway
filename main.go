@@ -191,7 +191,6 @@ func main() {
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
 	authRouter.POSTWithAuth("/v1/students", defaultHandler.CreateNewStudent)
-	authRouter.POSTWithAuth("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POSTWithAuth("/v1/parents", defaultHandler.CreateNewParent)
 	authRouter.POST("/v1/login/admin", defaultHandler.LoginAdminAuth)
 	authRouter.POSTWithAuth("/v1/join-sms/unsigned-students", defaultHandler.SendJoinSMSToUnsignedStudents)
@@ -205,6 +204,7 @@ func main() {
 	authRouter.GET("/v1/students/auth-code/:auth_code", defaultHandler.GetUnsignedStudentWithAuthCode)
 	authRouter.POST("/v1/students/with-code", defaultHandler.CreateNewStudentWithAuthCode)
 	// auth service api for teacher
+	authRouter.POST("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POST("/v1/login/teacher", defaultHandler.LoginTeacherAuth)
 	authRouter.PUTWithAuth("/v1/teachers/uuid/:teacher_uuid/password", defaultHandler.ChangeTeacherPW)
 	authRouter.GETWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.GetTeacherInformWithUUID)
