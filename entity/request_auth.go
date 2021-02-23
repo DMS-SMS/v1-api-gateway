@@ -9,7 +9,7 @@ import (
 type CreateNewStudentRequest struct {
 	StudentID     string `form:"student_id" validate:"required,min=4,max=16"`
 	StudentPW     string `form:"student_pw" validate:"required,min=4,max=16"`
-	ParentUUID    string `form:"parent_uuid" validate:"required,uuid=parent,len=19"`
+	ParentUUID    string `form:"parent_uuid" validate:"uuid=parent"`
 	Grade         int    `form:"grade" validate:"required,int_range=1~3"`
 	Group         int    `form:"group" validate:"required,int_range=1~4"`
 	StudentNumber int    `form:"student_number" validate:"required,int_range=1~21"`
