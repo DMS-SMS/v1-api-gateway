@@ -63,7 +63,7 @@ type CreateNewParentRequest struct {
 	ParentID    string `json:"parent_id" validate:"required,min=4,max=16"`
 	ParentPW    string `json:"parent_pw" validate:"required,min=4,max=16"`
 	Name        string `json:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber string `json:"phone_number" validate:"required,phone_number,len=11"`
+	PhoneNumber string `json:"phone_number" validate:"phone_number"`
 	Children        []struct {
 		Grade         int    `json:"grade" validate:"required,int_range=1~3"`
 		Group         int    `json:"group" validate:"int_range=1~4"`
