@@ -50,7 +50,7 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 		}
 
 		switch req.(type) {
-		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest:
+		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest, *entity.GetUnsignedStudentWithAuthCodeRequest:
 			if err := c.ShouldBindUri(req); err != nil {
 				respFor400["code"] = code.FailToBindRequestToStruct
 				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
@@ -60,7 +60,7 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 		case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest, *entity.GetStudentOutingsRequest,
 			*entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
 			*entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest,
-			*entity.GetMyAnnouncementsRequest, *entity.SearchAnnouncementsRequest:
+			*entity.GetMyAnnouncementsRequest, *entity.SearchAnnouncementsRequest, *entity.SendJoinSMSToUnsignedStudentsRequest:
 				if err := c.ShouldBindQuery(req); err != nil {
 					respFor400["code"] = code.FailToBindRequestToStruct
 					respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)

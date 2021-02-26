@@ -9,7 +9,7 @@ import (
 type CreateNewStudentRequest struct {
 	StudentID     string `form:"student_id" validate:"required,min=4,max=16"`
 	StudentPW     string `form:"student_pw" validate:"required,min=4,max=16"`
-	ParentUUID    string `form:"parent_uuid" validate:"required,uuid=parent,len=19"`
+	ParentUUID    string `form:"parent_uuid" validate:"uuid=parent"`
 	Grade         int    `form:"grade" validate:"required,int_range=1~3"`
 	Group         int    `form:"group" validate:"required,int_range=1~4"`
 	StudentNumber int    `form:"student_number" validate:"required,int_range=1~21"`
@@ -63,7 +63,13 @@ type CreateNewParentRequest struct {
 	ParentID    string `json:"parent_id" validate:"required,min=4,max=16"`
 	ParentPW    string `json:"parent_pw" validate:"required,min=4,max=16"`
 	Name        string `json:"name" validate:"required,korean,min=2,max=4"`
-	PhoneNumber string `json:"phone_number" validate:"required,phone_number,len=11"`
+	PhoneNumber string `json:"phone_number" validate:"phone_number"`
+	Children        []struct {
+		Grade         int    `json:"grade" validate:"required,int_range=1~3"`
+		Group         int    `json:"group" validate:"int_range=1~4"`
+		StudentNumber int    `json:"student_number" validate:"required,int_range=1~21"`
+		Name          string `json:"name" validate:"required,korean,min=2,max=4"`
+	} `json:"children" validate:"required"`
 }
 
 func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNewParentRequest) {
@@ -72,6 +78,15 @@ func (from CreateNewParentRequest) GenerateGRPCRequest() (to *authproto.CreateNe
 	to.ParentPW = from.ParentPW
 	to.Name = from.Name
 	to.PhoneNumber = from.PhoneNumber
+	to.ChildrenInform = make([]*authproto.ChildInform, len(from.Children))
+	for index, member := range from.Children {
+		to.ChildrenInform[index] = &authproto.ChildInform{
+			Grade:         uint32(member.Grade),
+			Group:         uint32(member.Group),
+			StudentNumber: uint32(member.StudentNumber),
+			Name:          member.Name,
+		}
+	}
 	return
 }
 
@@ -225,5 +240,41 @@ func (from GetParentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto
 	to = new(authproto.GetParentUUIDsWithInformRequest)
 	to.Name = from.Name
 	to.PhoneNumber = from.PhoneNumber
+	return
+}
+
+type SendJoinSMSToUnsignedStudentsRequest struct {
+	Grade int `form:"grade"`
+	Group int `form:"group"`
+}
+
+func (from SendJoinSMSToUnsignedStudentsRequest) GenerateGRPCRequest() (to *authproto.SendJoinSMSToUnsignedStudentsRequest) {
+	to = new(authproto.SendJoinSMSToUnsignedStudentsRequest)
+	to.TargetGrade = uint32(from.Grade)
+	to.TargetGroup = uint32(from.Group)
+	return
+}
+
+type GetUnsignedStudentWithAuthCodeRequest struct {
+	AuthCode int `uri:"auth_code" validate:"required"`
+}
+
+func (from GetUnsignedStudentWithAuthCodeRequest) GenerateGRPCRequest() (to *authproto.GetUnsignedStudentWithAuthCodeRequest) {
+	to = new(authproto.GetUnsignedStudentWithAuthCodeRequest)
+	to.AuthCode = uint32(from.AuthCode)
+	return
+}
+
+type CreateNewStudentWithAuthCodeRequest struct {
+	AuthCode  int    `json:"auth_code" validate:"required"`
+	StudentID string `json:"student_id" validate:"required,min=4,max=16"`
+	StudentPW string `json:"student_pw" validate:"required,min=4,max=16"`
+}
+
+func (from CreateNewStudentWithAuthCodeRequest) GenerateGRPCRequest() (to *authproto.CreateNewStudentWithAuthCodeRequest) {
+	to = new(authproto.CreateNewStudentWithAuthCodeRequest)
+	to.AuthCode = uint32(from.AuthCode)
+	to.StudentID = from.StudentID
+	to.StudentPW = from.StudentPW
 	return
 }

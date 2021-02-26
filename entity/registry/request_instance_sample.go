@@ -22,12 +22,15 @@ var requestSamples = map[string]interface{}{
 	"ChangeStudentPWRequest": entity.ChangeStudentPWRequest{},
 	"GetStudentUUIDsWithInformRequest": entity.GetStudentUUIDsWithInformRequest{},
 	"GetStudentInformsWithUUIDsRequest": entity.GetStudentInformsWithUUIDsRequest{},
+	"GetUnsignedStudentWithAuthCodeRequest": entity.GetUnsignedStudentWithAuthCodeRequest{},
+	"CreateNewStudentWithAuthCodeRequest": entity.CreateNewStudentWithAuthCodeRequest{},
 	"LoginTeacherAuthRequest": entity.LoginTeacherAuthRequest{},
 	"ChangeTeacherPWRequest": entity.ChangeTeacherPWRequest{},
 	"GetTeacherUUIDsWithInformRequest": entity.GetTeacherUUIDsWithInformRequest{},
 	"LoginParentAuthRequest": entity.LoginParentAuthRequest{},
 	"ChangeParentPWRequest": entity.ChangeParentPWRequest{},
 	"GetParentUUIDsWithInformRequest": entity.GetParentUUIDsWithInformRequest{},
+	"SendJoinSMSToUnsignedStudentsRequest": entity.SendJoinSMSToUnsignedStudentsRequest{},
 
 	// in "entity/request_club.go"
 	"CreateNewClubRequest": entity.CreateNewClubRequest{},
@@ -54,4 +57,7 @@ var requestSamples = map[string]interface{}{
 	"GetScheduleRequest": entity.GetScheduleRequest{},
 	"GetTimeTableRequest": entity.GetTimeTableRequest{},
 	"UpdateScheduleRequest": entity.UpdateScheduleRequest{},
+
+	// in "entity/request_xlsx.go"
+	"AddUnsignedStudentsFromExcelRequest": entity.AddUnsignedStudentsFromExcelRequest{},
 }

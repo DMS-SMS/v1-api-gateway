@@ -147,6 +147,7 @@ func main() {
 	scheduleLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/schedule.log", logrus.Fields{"service": "schedule"})
 	announcementLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/announcement.log", logrus.Fields{"service": "announcement"})
 	openApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/open-api.log", logrus.Fields{"service": "open-api"})
+	excelApiLogger := customlogrus.New("/usr/share/filebeat/log/dms-sms/excel-api.log", logrus.Fields{"service": "excel-api"})
 
 	// create custom router & register function to execute before run
 	gin.SetMode(gin.ReleaseMode)
@@ -190,9 +191,9 @@ func main() {
 	authRouter := router.CustomGroup("/", middleware.LogEntrySetter(authLogger))
 	// auth service api for admin
 	authRouter.POSTWithAuth("/v1/students", defaultHandler.CreateNewStudent)
-	authRouter.POSTWithAuth("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POSTWithAuth("/v1/parents", defaultHandler.CreateNewParent)
 	authRouter.POST("/v1/login/admin", defaultHandler.LoginAdminAuth)
+	authRouter.POSTWithAuth("/v1/join-sms/unsigned-students", defaultHandler.SendJoinSMSToUnsignedStudents)
 	// auth service api for student
 	authRouter.POST("/v1/login/student", defaultHandler.LoginStudentAuth)
 	authRouter.PUTWithAuth("/v1/students/uuid/:student_uuid/password", defaultHandler.ChangeStudentPW)
@@ -200,7 +201,10 @@ func main() {
 	authRouter.GETWithAuth("/v1/student-uuids", defaultHandler.GetStudentUUIDsWithInform)
 	authRouter.POSTWithAuth("/v1/students/with-uuids", defaultHandler.GetStudentInformsWithUUIDs)
 	authRouter.GETWithAuth("/v1/students/uuid/:student_uuid/parent", defaultHandler.GetParentWithStudentUUID)
+	authRouter.GET("/v1/students/auth-code/:auth_code", defaultHandler.GetUnsignedStudentWithAuthCode)
+	authRouter.POST("/v1/students/with-code", defaultHandler.CreateNewStudentWithAuthCode)
 	// auth service api for teacher
+	authRouter.POST("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POST("/v1/login/teacher", defaultHandler.LoginTeacherAuth)
 	authRouter.PUTWithAuth("/v1/teachers/uuid/:teacher_uuid/password", defaultHandler.ChangeTeacherPW)
 	authRouter.GETWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.GetTeacherInformWithUUID)
@@ -270,6 +274,11 @@ func main() {
 	// routing open-api agent API
 	openApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(openApiLogger))
 	openApiRouter.GETWithAuth("/naver-open-api/search/local", defaultHandler.GetPlaceWithNaverOpenAPI)
+
+	// routing excel handling API
+	excelApiRouter := router.CustomGroup("/", middleware.LogEntrySetter(excelApiLogger))
+	excelApiRouter.POSTWithAuth("/v1/unsigned-students/parsed-by/excel", defaultHandler.AddUnsignedStudentsFromExcel)
+	excelApiRouter.POSTWithAuth("/v1/unsigned-students/parsed-by/excel/sheets/:sheet", defaultHandler.AddUnsignedStudentsFromExcel)
 
 	// run server
 	log.Fatal(globalRouter.Run(":80"))
