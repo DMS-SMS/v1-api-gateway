@@ -1,3 +1,7 @@
+// add package in v.1.0.5
+// profiling package is used for profiling cpu, memory, block & upload file to s3
+// profiler.go is file that profile & uploading every few days in init function
+
 package profiling
 
 import (
