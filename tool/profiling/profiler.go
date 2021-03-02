@@ -2,6 +2,8 @@ package profiling
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"log"
 	"os"
 	"runtime"
@@ -66,6 +68,33 @@ func init() {
 			_ = cpuProfFile.Close()
 			_ = memoryProfFile.Close()
 			_ = blockProfFile.Close()
+
+			cpuProfFile, _ = os.Open(cpuProf)
+			memoryProfFile, _ = os.Open(memoryProf)
+			blockProfFile, _ = os.Open(blockProf)
+
+			svc := s3.New(globalSession)
+			if _, err := svc.PutObject(&s3.PutObjectInput{
+				Body:   cpuProfFile,
+				Bucket: aws.String(s3Bucket),
+				Key:    aws.String(cpuProfS3),
+			}); err != nil {
+				log.Fatalf("unable to upload cpu profiling result to s3, err: %v", err)
+			}
+			if _, err := svc.PutObject(&s3.PutObjectInput{
+				Body:   memoryProfFile,
+				Bucket: aws.String(s3Bucket),
+				Key:    aws.String(memoryProfS3),
+			}); err != nil {
+				log.Fatalf("unable to upload memory profiling result to s3, err: %v", err)
+			}
+			if _, err := svc.PutObject(&s3.PutObjectInput{
+				Body:   blockProfFile,
+				Bucket: aws.String(s3Bucket),
+				Key:    aws.String(blockProfS3),
+			}); err != nil {
+				log.Fatalf("unable to upload block profiling result to s3, err: %v", err)
+			}
 		}
 	}()
 }
