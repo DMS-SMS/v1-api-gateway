@@ -32,7 +32,7 @@ var (
 
 	// schedule regex
 	schedulesRegex = regexp.MustCompile("^schedules$")
-	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}$")
+	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}.count.\\d+$")
 
 	// announcement regex
 	announcementRegex = regexp.MustCompile("^announcements.announcement-\\d{12}$")
