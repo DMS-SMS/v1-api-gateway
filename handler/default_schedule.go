@@ -273,16 +273,16 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 	}
 	h.mutex.Unlock()
 
-	var rpcResp *scheduleproto.GetTimeTableResponse
+	var rpcResp *scheduleproto.GetTimeTablesResponse
 	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
-		scheduleSrvSpan := h.tracer.StartSpan("GetTimeTable", opentracing.ChildOf(topSpan.Context()))
+		scheduleSrvSpan := h.tracer.StartSpan("GetTimeTables", opentracing.ChildOf(topSpan.Context()))
 		ctxForReq := context.Background()
 		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
 		ctxForReq = metadata.Set(ctxForReq, "Span-Context", scheduleSrvSpan.Context().(jaeger.SpanContext).String())
 		rpcReq := receivedReq.GenerateGRPCRequest()
 		rpcReq.Uuid = uuidClaims.UUID
 		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
-		rpcResp, rpcErr = h.scheduleService.GetTimeTable(ctxForReq, rpcReq, callOpts...)
+		rpcResp, rpcErr = h.scheduleService.GetTimeTables(ctxForReq, rpcReq, callOpts...)
 		scheduleSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
 		scheduleSrvSpan.Finish()
 		return
@@ -295,10 +295,10 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 		status, _code, msg := 0, 0, ""
 		switch rpcErr.Code {
 		case http.StatusRequestTimeout:
-			msg = fmt.Sprintf("request time out for GetTimeTable service, detail: %s", rpcErr.Detail)
+			msg = fmt.Sprintf("request time out for GetTimeTables service, detail: %s", rpcErr.Detail)
 			status, _code = http.StatusRequestTimeout, 0
 		default:
-			msg = fmt.Sprintf("GetTimeTable returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			msg = fmt.Sprintf("GetTimeTables returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
 			status, _code = http.StatusInternalServerError, 0
 		}
 		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
@@ -325,9 +325,25 @@ func (h *_default) GetTimeTable(c *gin.Context) {
 	case http.StatusOK:
 		status, _code := http.StatusOK, 0
 		msg := "succeed to get your time table in that week number"
-		sendResp := gin.H{"status": status, "code": _code, "message": msg,
-			"time1": rpcResp.Time1, "time2": rpcResp.Time2, "time3": rpcResp.Time3, "time4": rpcResp.Time4,
-			"time5": rpcResp.Time5, "time6": rpcResp.Time6, "time7": rpcResp.Time7}
+
+		var sendResp gin.H
+		if len(rpcResp.TimeTable) <= 1 {
+			timeTable := &scheduleproto.TimeTable{}
+			if len(rpcResp.TimeTable) == 1 {
+				timeTable = rpcResp.TimeTable[0]
+			}
+			sendResp = gin.H{"status": status, "code": _code, "message": msg,
+				"time1": timeTable.Time1, "time2": timeTable.Time2, "time3": timeTable.Time3, "time4": timeTable.Time4,
+				"time5": timeTable.Time5, "time6": timeTable.Time6, "time7": timeTable.Time7}
+		} else {
+			sendResp = gin.H{"status": status, "code": _code, "message": msg}
+			timeTables := make([]map[string]string, len(rpcResp.TimeTable))
+			for i, timeTable := range rpcResp.TimeTable {
+				timeTables[i] = map[string]string{"time1": timeTable.Time1, "time2": timeTable.Time2, "time3": timeTable.Time3,
+					"time4": timeTable.Time4, "time5": timeTable.Time5, "time6": timeTable.Time6, "time7": timeTable.Time7}
+			}
+			sendResp["time_tables"] = timeTables
+		}
 		c.JSON(status, sendResp)
 		respBytes, _ := json.Marshal(sendResp)
 		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "response": string(respBytes), "request": string(reqBytes)}).Info()
