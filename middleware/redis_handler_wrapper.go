@@ -49,7 +49,7 @@ func (r *redisHandler) GetSchedule() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) GetTimeTable() []gin.HandlerFunc {
-	redisSetKey := "students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day"
+	redisSetKey := "students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day.count.$Count"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 
