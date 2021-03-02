@@ -8,14 +8,20 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"log"
+	log "github.com/micro/go-micro/v2/logger"
+	systemlog "log"
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/pprof"
+	"syscall"
 	"time"
 )
 
 func init() {
+	cmdFinSig := make(chan os.Signal, 1)
+	signal.Notify(cmdFinSig, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		for {
 			now := time.Now()
@@ -32,19 +38,19 @@ func init() {
 			blockProf := profPath + "/block.prof"
 
 			if err := os.MkdirAll(profPath, os.ModePerm); err != nil {
-				log.Fatal(err)
+				systemlog.Fatal(err)
 			}
 			cpuProfFile, err := os.Create(cpuProf)
 			if err != nil {
-				log.Fatal(err)
+				systemlog.Fatal(err)
 			}
 			memoryProfFile, err := os.Create(memoryProf)
 			if err != nil {
-				log.Fatal(err)
+				systemlog.Fatal(err)
 			}
 			blockProfFile, err := os.Create(blockProf)
 			if err != nil {
-				log.Fatal(err)
+				systemlog.Fatal(err)
 			}
 
 			// Ex) profiles/gateway/v.1.0.5/2021-03-02/13:40:31/cpu.prof
@@ -53,17 +59,23 @@ func init() {
 			memoryProfS3 := profS3Path + "/memory.prof"
 			blockProfS3 := profS3Path + "/block.prof"
 
-			fmt.Println("start profiling cpu, memory, block")
+			log.Info("start profiling cpu, memory, block")
 			if err := pprof.StartCPUProfile(cpuProfFile); err != nil {
-				log.Fatal(err)
+				systemlog.Fatal(err)
 			}
 
 			// 시작 당일이 끝날 때 까지 대기
 			afterOneDay := now.AddDate(0, 0, 1)
 			tomorrow := time.Date(afterOneDay.Year(), afterOneDay.Month(), afterOneDay.Day(), 0, 0, 0, 0, time.UTC)
-			time.Sleep(tomorrow.Sub(now))
+			timeFinSig := time.Tick(tomorrow.Sub(now))
 
-			fmt.Println("Uploading profile result to S3")
+			select {
+			case <-timeFinSig:
+				log.Info("upload profiling result recorded on this day")
+			case <-cmdFinSig:
+				log.Info("upload profiling result as shutdown of process")
+			}
+
 			runtime.GC()
 			_ = pprof.Lookup("heap").WriteTo(memoryProfFile, 1)
 			_ = pprof.Lookup("block").WriteTo(blockProfFile, 1)
@@ -83,21 +95,21 @@ func init() {
 				Bucket: aws.String(s3Bucket),
 				Key:    aws.String(cpuProfS3),
 			}); err != nil {
-				log.Fatalf("unable to upload cpu profiling result to s3, err: %v", err)
+				systemlog.Fatalf("unable to upload cpu profiling result to s3, err: %v", err)
 			}
 			if _, err := svc.PutObject(&s3.PutObjectInput{
 				Body:   memoryProfFile,
 				Bucket: aws.String(s3Bucket),
 				Key:    aws.String(memoryProfS3),
 			}); err != nil {
-				log.Fatalf("unable to upload memory profiling result to s3, err: %v", err)
+				systemlog.Fatalf("unable to upload memory profiling result to s3, err: %v", err)
 			}
 			if _, err := svc.PutObject(&s3.PutObjectInput{
 				Body:   blockProfFile,
 				Bucket: aws.String(s3Bucket),
 				Key:    aws.String(blockProfS3),
 			}); err != nil {
-				log.Fatalf("unable to upload block profiling result to s3, err: %v", err)
+				systemlog.Fatalf("unable to upload block profiling result to s3, err: %v", err)
 			}
 		}
 	}()
