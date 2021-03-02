@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"time"
 )
 
@@ -44,6 +46,26 @@ func init() {
 			cpuProfS3 := profS3Path + "/cpu.prof"
 			memoryProfS3 := profS3Path + "/memory.prof"
 			blockProfS3 := profS3Path + "/block.prof"
+
+			fmt.Println("start profiling cpu, memory, block")
+			if err := pprof.StartCPUProfile(cpuProfFile); err != nil {
+				log.Fatal(err)
+			}
+
+			// 시작 당일이 끝날 때 까지 대기
+			afterOneDay := now.AddDate(0, 0, 1)
+			tomorrow := time.Date(afterOneDay.Year(), afterOneDay.Month(), afterOneDay.Day(), 0, 0, 0, 0, time.UTC)
+			time.Sleep(tomorrow.Sub(now))
+
+			fmt.Println("Uploading profile result to S3")
+			runtime.GC()
+			_ = pprof.Lookup("heap").WriteTo(memoryProfFile, 1)
+			_ = pprof.Lookup("block").WriteTo(blockProfFile, 1)
+			pprof.StopCPUProfile()
+
+			_ = cpuProfFile.Close()
+			_ = memoryProfFile.Close()
+			_ = blockProfFile.Close()
 		}
 	}()
 }
