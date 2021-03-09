@@ -244,14 +244,16 @@ func (from GetParentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto
 }
 
 type SendJoinSMSToUnsignedStudentsRequest struct {
-	Grade int `form:"grade"`
-	Group int `form:"group"`
+	Grade         int `form:"grade"`
+	Group         int `form:"group"`
+	StudentNumber int `form:"student_number"`
 }
 
 func (from SendJoinSMSToUnsignedStudentsRequest) GenerateGRPCRequest() (to *authproto.SendJoinSMSToUnsignedStudentsRequest) {
 	to = new(authproto.SendJoinSMSToUnsignedStudentsRequest)
 	to.TargetGrade = uint32(from.Grade)
 	to.TargetGroup = uint32(from.Group)
+	to.TargetNumber = uint32(from.StudentNumber)
 	return
 }
 
