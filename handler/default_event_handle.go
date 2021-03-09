@@ -154,6 +154,9 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 		// ex) writers.student-123412341234.announcements -> writers.student-123412341234.announcements.start.*.count.*
 		pattern = fmt.Sprintf("%s.start.*.count.*", payload)
 
+	case regexp.MustCompile("students.*.timetable.*").MatchString(payload):
+		pattern = "students.*.timetable.*"
+
 	default:
 		err = errors.New(fmt.Sprintf("message does not match any regular expressions, msg payload: %s", payload))
 		return
