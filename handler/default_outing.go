@@ -224,6 +224,7 @@ func (h *_default) GetStudentOutings(c *gin.Context) {
 				"end_time":         outing.EndTime,
 				"outing_situation": outing.Situation,
 				"outing_status":    outing.Status,
+				"arrival_time":     outing.ArrivalTime,
 			}
 		}
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "outings": outings}
@@ -851,6 +852,7 @@ func (h *_default) GetOutingWithFilter(c *gin.Context) {
 				"group":            outing.Group,
 				"number":           outing.Number,
 				"is_late":          outing.IsLate,
+				"arrival_time":     outing.ArrivalTime,
 			}
 		}
 		sendResp := gin.H{"status": status, "code": _code, "message": msg, "outings": outings}
