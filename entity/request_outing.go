@@ -64,3 +64,14 @@ func (from GetOutingWithFilterRequest) GenerateGRPCRequest() (to *outingproto.Ge
 	to.Floor = from.Floor
 	return
 }
+
+// request entity of PATCH /v1/outings/uuid/:outing_uuid
+type ModifyOutingRequest struct {
+	EndTime int64 `json:"end_time" validate:"required,int_len=10"`
+}
+
+func (from ModifyOutingRequest) GenerateGRPCRequest() (to *outingproto.ModifyOutingRequest) {
+	to = new(outingproto.ModifyOutingRequest)
+	to.EndTime = from.EndTime
+	return
+}
