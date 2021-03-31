@@ -249,6 +249,7 @@ func main() {
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting, redisHandler.TakeActionInOuting()...)
 	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter, redisHandler.GetOutingWithFilter()...)
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
+	outingRouter.PATCHWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.ModifyOuting, redisHandler.ModifyOuting()...)
 
 	// routing schedule service API
 	scheduleRouter := router.CustomGroup("/", middleware.LogEntrySetter(scheduleLogger))
