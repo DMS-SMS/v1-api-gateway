@@ -38,6 +38,11 @@ func (r *redisHandler) GetOutingWithFilter() []gin.HandlerFunc {
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 
+func (r *redisHandler) ModifyOuting() []gin.HandlerFunc {
+	redisDelKeys := []string{"outings.$outing_uuid", "outings.$outing_uuid.card", "students.$TokenUUID.outings", "outings.filter"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusOK)}
+}
+
 func (r *redisHandler) CreateSchedule() []gin.HandlerFunc {
 	redisDelKeys := []string{"schedules"}
 	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusCreated)}
