@@ -25,10 +25,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/hashicorp/consul/api"
-	"github.com/micro/go-micro/v2/client"
 	grpccli "github.com/micro/go-micro/v2/client/grpc"
 	"github.com/micro/go-micro/v2/client/selector"
-	"github.com/micro/go-micro/v2/transport/grpc"
 	"github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -96,7 +94,7 @@ func main() {
 	}()
 
 	// gRPC service client
-	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
+	gRPCCli := grpccli.NewClient()
 	authSrvCli := authproto.NewAuthService(topic.AuthServiceName, gRPCCli)
 	clubSrvCli := clubproto.NewClubService(topic.ClubServiceName, gRPCCli)
 	outingSrvCli := outingproto.NewOutingService("", gRPCCli)
