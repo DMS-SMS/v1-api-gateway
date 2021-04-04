@@ -174,6 +174,19 @@ func (from LoginTeacherAuthRequest) GenerateGRPCRequest() (to *authproto.LoginTe
 	return
 }
 
+// request entity of POST v1/login/teacher/with-pick
+type LoginTeacherAuthWithPICKRequest struct {
+	TeacherID string `json:"teacher_id" validate:"required"`
+	TeacherPW string `json:"teacher_pw" validate:"required"`
+}
+
+func (from LoginTeacherAuthWithPICKRequest) GenerateGRPCRequest() (to *authproto.LoginTeacherAuthWithPICKRequest) {
+	to = new(authproto.LoginTeacherAuthWithPICKRequest)
+	to.TeacherID = from.TeacherID
+	to.TeacherPW = from.TeacherPW
+	return
+}
+
 // request entity for PUT v1/teachers/uuid/:teacher_uuid/password
 type ChangeTeacherPWRequest struct {
 	CurrentPW   string `json:"current_pw" validate:"required"`
