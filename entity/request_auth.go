@@ -217,6 +217,17 @@ func (from GetTeacherUUIDsWithInformRequest) GenerateGRPCRequest() (to *authprot
 	return
 }
 
+// request entity for PATCH v1/teachers/uuid/:teacher_uuid
+type ChangeTeacherInformRequest struct {
+	PhoneNumber string `json:"phone_number" validate:"phone_number"`
+}
+
+func (from ChangeTeacherInformRequest) GenerateGRPCRequest() (to *authproto.ChangeTeacherInformRequest) {
+	to = new(authproto.ChangeTeacherInformRequest)
+	to.PhoneNumber = from.PhoneNumber
+	return
+}
+
 // request entity of POST v1/login/parent
 type LoginParentAuthRequest struct {
 	ParentID string `json:"parent_id" validate:"required"`
