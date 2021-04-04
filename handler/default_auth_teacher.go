@@ -225,6 +225,111 @@ func (h *_default) LoginTeacherAuth(c *gin.Context) {
 	return
 }
 
+func (h *_default) LoginTeacherAuthWithPICK(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-Id")
+
+	// get top span from middleware
+	inAdvanceTopSpan, _ := c.Get("TopSpan")
+	topSpan, _ := inAdvanceTopSpan.(opentracing.Span)
+
+	// get log entry from middleware
+	inAdvanceEntry, _ := c.Get("RequestLogEntry")
+	entry, _ := inAdvanceEntry.(*logrus.Entry)
+
+	// get bound request entry from middleware
+	inAdvanceReq, _ := c.Get("Request")
+	receivedReq, _ := inAdvanceReq.(*entity.LoginTeacherAuthWithPICKRequest)
+	reqBytes, _ := json.Marshal(receivedReq)
+
+	selectedNode, err := h.consulAgent.GetNextServiceNode(topic.AuthServiceName)
+	if err != nil {
+		status, _code, msg := h.getStatusCodeFromConsulErr(err)
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+	entry = entry.WithField("SelectedNode", *selectedNode)
+
+	h.mutex.Lock()
+	if _, ok := h.breakers[selectedNode.Id]; !ok {
+		h.breakers[selectedNode.Id] = breaker.New(h.BreakerCfg.ErrorThreshold, h.BreakerCfg.SuccessThreshold, h.BreakerCfg.Timeout)
+	}
+	h.mutex.Unlock()
+
+	var rpcResp *authproto.LoginTeacherAuthWithPICKResponse
+	err = h.breakers[selectedNode.Id].Run(func() (rpcErr error) {
+		authSrvSpan := h.tracer.StartSpan("LoginTeacherAuthWithPICK", opentracing.ChildOf(topSpan.Context()))
+		ctxForReq := context.Background()
+		ctxForReq = metadata.Set(ctxForReq, "X-Request-Id", reqID)
+		ctxForReq = metadata.Set(ctxForReq, "Span-Context", authSrvSpan.Context().(jaeger.SpanContext).String())
+		rpcReq := receivedReq.GenerateGRPCRequest()
+		callOpts := append(h.DefaultCallOpts, client.WithAddress(selectedNode.Address))
+		rpcResp, rpcErr = h.authService.LoginTeacherAuthWithPICK(ctxForReq, rpcReq, callOpts...)
+		authSrvSpan.SetTag("X-Request-Id", reqID).LogFields(log.Object("request", rpcReq), log.Object("response", rpcResp), log.Error(rpcErr))
+		authSrvSpan.Finish()
+		return
+	})
+
+	switch rpcErr := err.(type) {
+	case nil:
+		break
+	case *errors.Error:
+		status, _code, msg := 0, 0, ""
+		switch rpcErr.Code {
+		case http.StatusRequestTimeout:
+			msg = fmt.Sprintf("request time out for LoginTeacherAuthWithPICK service, detail: %s", rpcErr.Detail)
+			status, _code = http.StatusRequestTimeout, 0
+		default:
+			msg = fmt.Sprintf("LoginTeacherAuthWithPICK returns unexpected micro error, code: %d, detail: %s", rpcErr.Code, rpcErr.Detail)
+			status, _code = http.StatusInternalServerError, 0
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	default:
+		status, _code, msg := 0, 0, ""
+		switch rpcErr {
+		case breaker.ErrBreakerOpen:
+			status, _code = http.StatusServiceUnavailable, code.CircuitBreakerOpen
+			msg = fmt.Sprintf("circuit breaker is open (service id: %s, time out: %s)", selectedNode.Id, h.BreakerCfg.Timeout.String())
+			_ = h.consulAgent.FailTTLHealth(selectedNode.Metadata["CheckID"], breaker.ErrBreakerOpen.Error())
+			time.AfterFunc(h.BreakerCfg.Timeout, func() { _ = h.consulAgent.PassTTLHealth(selectedNode.Metadata["CheckID"], "close circuit breaker") })
+		default:
+			status, _code = http.StatusInternalServerError, 0
+			msg = fmt.Sprintf("LoginTeacherAuthWithPICK returns unexpected type of error, err: %s", rpcErr.Error())
+		}
+		c.JSON(status, gin.H{"status": status, "code": _code, "message": msg})
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "request": string(reqBytes)}).Error()
+		return
+	}
+
+	switch rpcResp.Status {
+	case http.StatusOK:
+		status, _code := http.StatusOK, 0
+		msg := "succeed to login teacher auth with PICK API"
+		jwtToken, _ := jwtutil.GenerateStringWithClaims(jwtutil.UUIDClaims{
+			UUID: rpcResp.LoggedInTeacherUUID,
+			Type: "access_token",
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+			},
+		}, jwt.SigningMethodHS512)
+		sendResp := gin.H{"status": status, "code": _code, "message": msg, "access_token": jwtToken, "teacher_uuid": rpcResp.LoggedInTeacherUUID}
+		c.JSON(status, sendResp)
+		respBytes, _ := json.Marshal(sendResp)
+		entry.WithFields(logrus.Fields{"status": status, "code": _code, "message": msg, "login_uuid": rpcResp.LoggedInTeacherUUID,
+			"response": string(respBytes), "request": string(reqBytes)}).Info()
+	case http.StatusRequestTimeout, http.StatusInternalServerError, http.StatusServiceUnavailable:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Error()
+	default:
+		c.JSON(int(rpcResp.Status), gin.H{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message})
+		entry.WithFields(logrus.Fields{"status": rpcResp.Status, "code": rpcResp.Code, "message": rpcResp.Message, "request": string(reqBytes)}).Info()
+	}
+
+	return
+}
+
 func (h *_default) ChangeTeacherPW(c *gin.Context) {
 	reqID := c.GetHeader("X-Request-Id")
 
