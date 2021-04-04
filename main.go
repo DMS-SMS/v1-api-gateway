@@ -208,6 +208,7 @@ func main() {
 	authRouter.PUTWithAuth("/v1/teachers/uuid/:teacher_uuid/password", defaultHandler.ChangeTeacherPW)
 	authRouter.GETWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.GetTeacherInformWithUUID)
 	authRouter.GETWithAuth("/v1/teacher-uuids", defaultHandler.GetTeacherUUIDsWithInform)
+	authRouter.PATCHWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.ChangeTeacherInform)
 	// auth service api for parent
 	authRouter.POST("/v1/login/parent", defaultHandler.LoginParentAuth)
 	authRouter.PUTWithAuth("/v1/parents/uuid/:parent_uuid/password", defaultHandler.ChangeParentPW)
