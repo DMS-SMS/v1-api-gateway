@@ -204,6 +204,7 @@ func main() {
 	// auth service api for teacher
 	authRouter.POST("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POST("/v1/login/teacher", defaultHandler.LoginTeacherAuth)
+	authRouter.POST("/v1/login/teacher/with-pick", defaultHandler.LoginTeacherAuthWithPICK)
 	authRouter.PUTWithAuth("/v1/teachers/uuid/:teacher_uuid/password", defaultHandler.ChangeTeacherPW)
 	authRouter.GETWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.GetTeacherInformWithUUID)
 	authRouter.GETWithAuth("/v1/teacher-uuids", defaultHandler.GetTeacherUUIDsWithInform)
