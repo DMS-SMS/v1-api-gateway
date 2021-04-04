@@ -28,6 +28,7 @@ var requestSamples = map[string]interface{}{
 	"LoginTeacherAuthWithPICKRequest":       entity.LoginTeacherAuthWithPICKRequest{},
 	"ChangeTeacherPWRequest":                entity.ChangeTeacherPWRequest{},
 	"GetTeacherUUIDsWithInformRequest":      entity.GetTeacherUUIDsWithInformRequest{},
+	"ChangeTeacherInformRequest":            entity.ChangeTeacherInformRequest{},
 	"LoginParentAuthRequest":                entity.LoginParentAuthRequest{},
 	"ChangeParentPWRequest":                 entity.ChangeParentPWRequest{},
 	"GetParentUUIDsWithInformRequest":       entity.GetParentUUIDsWithInformRequest{},
