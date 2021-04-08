@@ -124,7 +124,7 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 
 	case outingsFilterRegex.MatchString(payload):
 		// ex) outings.filter -> outings.filter.start.*.count.*.status.*.grade.*.group.*.floor.*
-		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
+		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*.start_time.*.end_time.*", payload)
 
 	case outingRegex.MatchString(payload):
 		// ex) outings.outing-123412341234 -> outings.outing-123412341234
