@@ -42,19 +42,17 @@ func (from GetStudentOutingsRequest) GenerateGRPCRequest() (to *outingproto.GetS
 
 // request entity of GET /v1/outings/with-filter
 type GetOutingWithFilterRequest struct {
-	Start  int32  `form:"start"`
-	Count  int32  `form:"count"`
-	Status string `form:"status"`
-	Grade  int32  `form:"grade"`
-	Group  int32  `form:"group"`
-	Floor  int32  `form:"floor"`
+	Start     int32  `form:"start"`
+	Count     int32  `form:"count"`
+	Status    string `form:"status"`
+	Grade     int32  `form:"grade"`
+	Group     int32  `form:"group"`
+	Floor     int32  `form:"floor"`
+	StartTime int32  `form:"start_time"`
+	EndTime   int32  `form:"end_time"`
 }
 
 func (from GetOutingWithFilterRequest) GenerateGRPCRequest() (to *outingproto.GetOutingWithFilterRequest) {
-	if from.Count == 0 {
-		from.Count = 10
-	}
-
 	to = new(outingproto.GetOutingWithFilterRequest)
 	to.Start = from.Start
 	to.Count = from.Count
@@ -62,6 +60,8 @@ func (from GetOutingWithFilterRequest) GenerateGRPCRequest() (to *outingproto.Ge
 	to.Grade = from.Grade
 	to.Group = from.Group
 	to.Floor = from.Floor
+	to.StartTime = from.StartTime
+	to.EndTime = from.EndTime
 	return
 }
 
