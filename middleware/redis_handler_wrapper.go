@@ -34,7 +34,7 @@ func (r *redisHandler) TakeActionInOuting() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) GetOutingWithFilter() []gin.HandlerFunc {
-	redisSetKey := "outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor"
+	redisSetKey := "outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor.start_time.$StartTime.end_time.$EndTime"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 
