@@ -55,7 +55,7 @@
     - **설명** -> 적절한 서비스에 **사용자 요청 라우팅** 서비스
     - **개발** -> 박진홍
 
-2. ### [**Health Checker**](https://github.com/DMS-SMS/v1-health-checker) *(개발 전)*
+2. ### [**Health Checker**](https://github.com/DMS-SMS/v1-health-checker) *(개발 왼료)*
     - **이름** -> DMS.SMS.v1.api.health-checker
     - **기능** -> Consul을 이용한 서비스 및 엔드포인트를 이용한 API **상태 체크 및 기록 관리**
     - **개발** -> 박진홍
