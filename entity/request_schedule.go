@@ -37,13 +37,15 @@ type GetTimeTableRequest struct {
 	Year  int32 `uri:"year" validate:"required,int_range=0~9999"`
 	Month int32 `uri:"month" validate:"required,int_range=1~12"`
 	Day   int32 `uri:"day" validate:"required,int_range=1~31"`
+	Count int32 `form:"count"`
 }
 
-func (from GetTimeTableRequest) GenerateGRPCRequest() (to *scheduleproto.GetTimeTableRequest) {
-	to = new(scheduleproto.GetTimeTableRequest)
+func (from GetTimeTableRequest) GenerateGRPCRequest() (to *scheduleproto.GetTimeTablesRequest) {
+	to = new(scheduleproto.GetTimeTablesRequest)
 	to.Year = from.Year
 	to.Month = from.Month
 	to.Day = from.Day
+	to.Count = from.Count
 	return
 }
 

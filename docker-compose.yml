@@ -27,9 +27,11 @@ services:
       - CHANGE_CONSUL_SQS_GATEWAY=${CHANGE_CONSUL_SQS_GATEWAY} # add in v.1.0.2
       - REDIS_DELETE_TOPIC=${REDIS_DELETE_TOPIC}  # add in v.1.0.3
       - REDIS_SET_TOPIC=${REDIS_SET_TOPIC}        # add in v.1.0.4
+      - VERSION=${VERSION}  # add in v.1.0.5
     volumes:
       - log-data:/usr/share/filebeat/log/dms-sms
       - ./entity:/usr/share/gateway/entity
+      - gateway-profile:/usr/share/gateway/profile
     deploy:
       mode: replicated
       replicas: 1
@@ -43,4 +45,7 @@ networks:
 volumes:
   log-data:
     name: log-data
+    driver: local
+  gateway-profile:
+    name: gateway-profile
     driver: local

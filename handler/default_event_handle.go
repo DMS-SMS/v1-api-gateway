@@ -32,7 +32,7 @@ var (
 
 	// schedule regex
 	schedulesRegex = regexp.MustCompile("^schedules$")
-	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}$")
+	timetableRegex = regexp.MustCompile("^students.student-\\d{12}.timetable.years.\\d{4}.months.\\d{1,2}.days.\\d{1,2}.count.\\d+$")
 
 	// announcement regex
 	announcementRegex = regexp.MustCompile("^announcements.announcement-\\d{12}$")
@@ -124,7 +124,7 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 
 	case outingsFilterRegex.MatchString(payload):
 		// ex) outings.filter -> outings.filter.start.*.count.*.status.*.grade.*.group.*.floor.*
-		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*", payload)
+		pattern = fmt.Sprintf("%s.start.*.count.*.status.*.grade.*.group.*.floor.*.start_time.*.end_time.*", payload)
 
 	case outingRegex.MatchString(payload):
 		// ex) outings.outing-123412341234 -> outings.outing-123412341234
@@ -153,6 +153,9 @@ func (h *_default) DeleteAssociatedRedisKey(msg *redis.Message) (err error) {
 	case myAnnouncementRegex.MatchString(payload):
 		// ex) writers.student-123412341234.announcements -> writers.student-123412341234.announcements.start.*.count.*
 		pattern = fmt.Sprintf("%s.start.*.count.*", payload)
+
+	case regexp.MustCompile("students.*.timetable.*").MatchString(payload):
+		pattern = "students.*.timetable.*"
 
 	default:
 		err = errors.New(fmt.Sprintf("message does not match any regular expressions, msg payload: %s", payload))

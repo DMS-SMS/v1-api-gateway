@@ -34,8 +34,13 @@ func (r *redisHandler) TakeActionInOuting() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) GetOutingWithFilter() []gin.HandlerFunc {
-	redisSetKey := "outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor"
+	redisSetKey := "outings.filter.start.$Start.count.$Count.status.$Status.grade.$Grade.group.$Group.floor.$Floor.start_time.$StartTime.end_time.$EndTime"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
+}
+
+func (r *redisHandler) ModifyOuting() []gin.HandlerFunc {
+	redisDelKeys := []string{"outings.$outing_uuid", "outings.$outing_uuid.card", "students.$TokenUUID.outings", "outings.filter"}
+	return []gin.HandlerFunc{r.DeleteKeyEventPublisher(redisDelKeys, http.StatusOK)}
 }
 
 func (r *redisHandler) CreateSchedule() []gin.HandlerFunc {
@@ -49,7 +54,7 @@ func (r *redisHandler) GetSchedule() []gin.HandlerFunc {
 }
 
 func (r *redisHandler) GetTimeTable() []gin.HandlerFunc {
-	redisSetKey := "students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day"
+	redisSetKey := "students.$TokenUUID.timetable.years.$Year.months.$Month.days.$Day.count.$Count"
 	return r.ResponderAndSetEventPublisher(redisSetKey, http.StatusOK)
 }
 

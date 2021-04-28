@@ -25,10 +25,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/hashicorp/consul/api"
-	"github.com/micro/go-micro/v2/client"
 	grpccli "github.com/micro/go-micro/v2/client/grpc"
 	"github.com/micro/go-micro/v2/client/selector"
-	"github.com/micro/go-micro/v2/transport/grpc"
 	"github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -96,7 +94,7 @@ func main() {
 	}()
 
 	// gRPC service client
-	gRPCCli := grpccli.NewClient(client.Transport(grpc.NewTransport()))
+	gRPCCli := grpccli.NewClient()
 	authSrvCli := authproto.NewAuthService(topic.AuthServiceName, gRPCCli)
 	clubSrvCli := clubproto.NewClubService(topic.ClubServiceName, gRPCCli)
 	outingSrvCli := outingproto.NewOutingService("", gRPCCli)
@@ -206,9 +204,11 @@ func main() {
 	// auth service api for teacher
 	authRouter.POST("/v1/teachers", defaultHandler.CreateNewTeacher)
 	authRouter.POST("/v1/login/teacher", defaultHandler.LoginTeacherAuth)
+	authRouter.POST("/v1/login/teacher/with-pick", defaultHandler.LoginTeacherAuthWithPICK)
 	authRouter.PUTWithAuth("/v1/teachers/uuid/:teacher_uuid/password", defaultHandler.ChangeTeacherPW)
 	authRouter.GETWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.GetTeacherInformWithUUID)
 	authRouter.GETWithAuth("/v1/teacher-uuids", defaultHandler.GetTeacherUUIDsWithInform)
+	authRouter.PATCHWithAuth("/v1/teachers/uuid/:teacher_uuid", defaultHandler.ChangeTeacherInform)
 	// auth service api for parent
 	authRouter.POST("/v1/login/parent", defaultHandler.LoginParentAuth)
 	authRouter.PUTWithAuth("/v1/parents/uuid/:parent_uuid/password", defaultHandler.ChangeParentPW)
@@ -251,6 +251,7 @@ func main() {
 	outingRouter.POST("/v1/outings/uuid/:outing_uuid/actions/:action", defaultHandler.TakeActionInOuting, redisHandler.TakeActionInOuting()...)
 	outingRouter.GETWithAuth("/v1/outings/with-filter", defaultHandler.GetOutingWithFilter, redisHandler.GetOutingWithFilter()...)
 	outingRouter.GET("/v1/outings/code/:OCode", defaultHandler.GetOutingByOCode)
+	outingRouter.PATCHWithAuth("/v1/outings/uuid/:outing_uuid", defaultHandler.ModifyOuting, redisHandler.ModifyOuting()...)
 
 	// routing schedule service API
 	scheduleRouter := router.CustomGroup("/", middleware.LogEntrySetter(scheduleLogger))

@@ -49,8 +49,24 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 			"message": "",
 		}
 
-		switch req.(type) {
-		case *entity.GetScheduleRequest, *entity.GetTimeTableRequest, *entity.GetUnsignedStudentWithAuthCodeRequest:
+		switch req := req.(type) {
+		case *entity.GetTimeTableRequest:
+			if err := c.ShouldBindUri(req); err != nil {
+				respFor400["code"] = code.FailToBindRequestToStruct
+				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
+			if err := c.ShouldBindQuery(req); err != nil {
+				respFor400["code"] = code.FailToBindRequestToStruct
+				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
+			if req.Count == 0 {
+				req.Count = 1
+			}
+		case *entity.GetScheduleRequest, *entity.GetUnsignedStudentWithAuthCodeRequest:
 			if err := c.ShouldBindUri(req); err != nil {
 				respFor400["code"] = code.FailToBindRequestToStruct
 				respFor400["message"] = fmt.Sprintf("failed to bind uri in request into golang struct, err: %v", err)
@@ -58,7 +74,7 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 				return
 			}
 		case *entity.GetClubsSortByUpdateTimeRequest, *entity.GetRecruitmentsSortByCreateTimeRequest, *entity.GetStudentOutingsRequest,
-			*entity.GetOutingWithFilterRequest, *entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
+			*entity.GetAnnouncementsRequest, *entity.GetPlaceWithNaverOpenAPIRequest,
 			*entity.GetStudentUUIDsWithInformRequest, *entity.GetTeacherUUIDsWithInformRequest, *entity.GetParentUUIDsWithInformRequest,
 			*entity.GetMyAnnouncementsRequest, *entity.SearchAnnouncementsRequest, *entity.SendJoinSMSToUnsignedStudentsRequest:
 				if err := c.ShouldBindQuery(req); err != nil {
@@ -78,6 +94,13 @@ func (r *requestValidator) RequestValidator(h gin.HandlerFunc) gin.HandlerFunc {
 							}
 					}
 				}
+		case *entity.GetOutingWithFilterRequest:
+			if err := c.ShouldBindQuery(req); err != nil {
+				respFor400["code"] = code.FailToBindRequestToStruct
+				respFor400["message"] = fmt.Sprintf("failed to bind query parameter in request into golang struct, err: %v", err)
+				c.AbortWithStatusJSON(http.StatusBadRequest, respFor400)
+				return
+			}
 		default:
 			switch c.ContentType() {
 			case "multipart/form-data":

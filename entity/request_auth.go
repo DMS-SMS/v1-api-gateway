@@ -174,6 +174,19 @@ func (from LoginTeacherAuthRequest) GenerateGRPCRequest() (to *authproto.LoginTe
 	return
 }
 
+// request entity of POST v1/login/teacher/with-pick
+type LoginTeacherAuthWithPICKRequest struct {
+	TeacherID string `json:"teacher_id" validate:"required"`
+	TeacherPW string `json:"teacher_pw" validate:"required"`
+}
+
+func (from LoginTeacherAuthWithPICKRequest) GenerateGRPCRequest() (to *authproto.LoginTeacherAuthWithPICKRequest) {
+	to = new(authproto.LoginTeacherAuthWithPICKRequest)
+	to.TeacherID = from.TeacherID
+	to.TeacherPW = from.TeacherPW
+	return
+}
+
 // request entity for PUT v1/teachers/uuid/:teacher_uuid/password
 type ChangeTeacherPWRequest struct {
 	CurrentPW   string `json:"current_pw" validate:"required"`
@@ -200,6 +213,17 @@ func (from GetTeacherUUIDsWithInformRequest) GenerateGRPCRequest() (to *authprot
 	to.Grade = uint32(from.Grade)
 	to.Group = uint32(from.Group)
 	to.Name = from.Name
+	to.PhoneNumber = from.PhoneNumber
+	return
+}
+
+// request entity for PATCH v1/teachers/uuid/:teacher_uuid
+type ChangeTeacherInformRequest struct {
+	PhoneNumber string `json:"phone_number" validate:"phone_number"`
+}
+
+func (from ChangeTeacherInformRequest) GenerateGRPCRequest() (to *authproto.ChangeTeacherInformRequest) {
+	to = new(authproto.ChangeTeacherInformRequest)
 	to.PhoneNumber = from.PhoneNumber
 	return
 }
@@ -244,14 +268,16 @@ func (from GetParentUUIDsWithInformRequest) GenerateGRPCRequest() (to *authproto
 }
 
 type SendJoinSMSToUnsignedStudentsRequest struct {
-	Grade int `form:"grade"`
-	Group int `form:"group"`
+	Grade         int `form:"grade"`
+	Group         int `form:"group"`
+	StudentNumber int `form:"student_number"`
 }
 
 func (from SendJoinSMSToUnsignedStudentsRequest) GenerateGRPCRequest() (to *authproto.SendJoinSMSToUnsignedStudentsRequest) {
 	to = new(authproto.SendJoinSMSToUnsignedStudentsRequest)
 	to.TargetGrade = uint32(from.Grade)
 	to.TargetGroup = uint32(from.Group)
+	to.TargetNumber = uint32(from.StudentNumber)
 	return
 }
 
